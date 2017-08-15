@@ -3,6 +3,80 @@ app.controller('HomeController', function($scope, $http) {
 });
 
 app.controller('MapController', function($scope, $http, $routeParams) {
+
+
+	/*popup
+	* 
+	*/
+	var container = document.getElementById('popup');
+	var content = document.getElementById('popup-content');
+	var closer = document.getElementById('popup-closer');
+
+
+	/**
+	 * Create an overlay to anchor the popup to the map.
+	 */
+	var overlay = new ol.Overlay(/** @type {olx.OverlayOptions} */( {
+		element : container,
+		autoPan : true,
+		autoPanAnimation : {
+			duration : 250
+		}
+	}));
+
+	/**
+	 * Add a click handler to hide the popup.
+	 * @return {boolean} Don't follow the href.
+	 */
+	closer.onclick = function() {
+		overlay.setPosition(undefined);
+		closer.blur();
+		return false;
+	}; 
+	/*
+	 *  fim popup
+	 */
+
+
+	var map = new ol.Map({
+		overlays: [overlay],
+		target : 'map',
+		layers : [new ol.layer.Tile({
+			source : new ol.source.OSM()
+		})],
+		view : new ol.View({
+			center : ol.proj.fromLonLat([-42.62, -22.34]),
+			zoom : 8
+		})
+	});
+	
+
+	/**
+	* Add a click handler to the map to render the popup.
+	*/
+	map.on('singleclick', function(evt) {
+
+		var feature = map.forEachFeatureAtPixel(evt.pixel, function(feature, layer) {
+			return feature;
+		});
+		
+		var txt = 
+			'Coef. Aglom: '+feature.get('coef_aglom')+'<br>'+
+			'Grau: '+feature.get('grau')+'<br>'+
+			'Betweeness: '+feature.get('betweeness')+'<br>'+
+			'Menor Cam. Médio: '+feature.get('mencamed')+'<br>'+
+			'Closeness: '+feature.get('closeness')+'<br>'+
+			'Strahler:'+feature.get('strahler')+'<br>'+
+			'Gid: '+feature.get('gid')+'<br>';
+		
+		var coordinate = evt.coordinate;
+		var hdms = ol.coordinate.toStringHDMS(ol.proj.transform(coordinate, 'EPSG:3857', 'EPSG:4326'));
+
+		content.innerHTML = '<p>Propriedades:</p><code>' +txt+ '</code>';
+		overlay.setPosition(coordinate);
+	}); 
+
+	
 	$scope.cores = [
 		"#777777", 
 		"#FFFF00",
@@ -23,6 +97,9 @@ app.controller('MapController', function($scope, $http, $routeParams) {
 		strahler:{max:0,min:0}
 		
 	};
+	
+
+	
 	
 	$http({
 		method : 'GET',
@@ -104,65 +181,42 @@ app.controller('MapController', function($scope, $http, $routeParams) {
 	});
 			
 
-	function styleFeature(f) {
-		//console.log(f);
-		cor = $scope.cores[f.properties.grau];
-		 
+	function styleFunction(f) {
+		cor = $scope.cores[f.R.grau];
 		
-		var wh = 10;//(10 * (f.properties.mencamed / $scope.limites.mencamed.max ));
+		var st = new ol.style.Style({
+			stroke : new ol.style.Stroke({
+				color : cor,
+				lineDash : [f.R.coef_aglom],
+				width : 10
+			}),
+			fill : new ol.style.Fill({
+				color : 'rgba(0, 0, 255, 0.1)'
+			})
+		});
+		//console.log(st);
+		return st;
 
-		return {
-			fillColor : cor,
-			fillOpacity : 0.7,
-			color : cor,
-			opacity : 0.7,//(f.properties.betweeness / $scope.limites.betweeness.max)+0.1,
-			weight : wh,
-			dashArray : f.properties.coef_aglom,
-		};
 	};
 
 	function addLayer() {
-		//console.log(obj);
-		$scope.brasil = L.geoJson($scope.obj, {
-			style : styleFeature,
-			onEachFeature : onEachFeature,
-			filter : filter
+
+		_geojson_vectorSource = new ol.source.Vector({
+			features : (new ol.format.GeoJSON()).readFeatures($scope.obj, {
+				featureProjection : 'EPSG:3857'
+			})
 		});
-		$scope.brasil.addTo($scope.map);
-		$scope.map.fitBounds($scope.brasil.getBounds());
-		$scope.control.addOverlay($scope.brasil, 'GIS4Graph');
-	}
 
-	/*Function that zoom map on selected feature
-	 called on onEachFeature -> layer.on({click})*/
-	function zoomToFeature(e) {
-		$scope.map.fitBounds(e.target.getBounds());
-	}
-
-	function onEachFeature(feature, layer) {
-		//console.log(feature);
-		layer.bindPopup(
-			'Coef. Aglom: '+feature.properties.coef_aglom+'<br>'+
-			'Grau: '+feature.properties.grau+'<br>'+
-			'Betweeness: '+feature.properties.betweeness+'<br>'+
-			'Menor Cam. Médio: '+feature.properties.mencamed+'<br>'+
-			'Closeness: '+feature.properties.closeness+'<br>'+
-			'Strahler:'+feature.properties.strahler+'<br>'+
-			'Gid: '+feature.properties.gid+'<br>'
-		);
-		layer.on({
-			//mouseover: highlightFeature,
-			//mouseout: resetHighlight,
-			//click: zoomToFeature
+		_geojson_vectorLayer = new ol.layer.Vector({
+			source : _geojson_vectorSource,
+			style : styleFunction
 		});
-	}
 
-	function filter(feature, layer) {
-		//console.log(feature);
-		if (feature.properties.id <= $scope.numero)
-			return true;
-		return true;
+		map.addLayer(_geojson_vectorLayer); 
+		
 	};
+
+
 
 });
 
