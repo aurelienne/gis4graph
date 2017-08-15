@@ -119,7 +119,7 @@ app.controller('MapController', function($scope, $http, $routeParams) {
 		}
 	}); 
 
-	
+
 	$scope.cores = [
 		"#777777", 
 		"#FFFF00",
@@ -231,7 +231,7 @@ app.controller('MapController', function($scope, $http, $routeParams) {
 			stroke : new ol.style.Stroke({
 				color : cor,
 				lineDash : [f.R.coef_aglom],
-				width : 10
+				width : 5
 			}),
 			fill : new ol.style.Fill({
 				color : 'rgba(0, 0, 255, 0.1)'
@@ -256,6 +256,8 @@ app.controller('MapController', function($scope, $http, $routeParams) {
 		});
 
 		map.addLayer(_geojson_vectorLayer); 
+		
+		map.getView().fit(_geojson_vectorSource.getExtent(), map.getSize());
 		
 	};
 
