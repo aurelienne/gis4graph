@@ -31,7 +31,7 @@ def convert_shp2graph(path):
     if request.method == 'GET':
         os.makedirs('out/'+dir)
         import converter as c
-        c.Shp2Graph(path, 'out/'+dir+'/out')
+        c.Shp2Graph(path, 'out/'+dir+'/out',dir)
         return redirect("/app/#/map/"+dir, code=302)
 
 
