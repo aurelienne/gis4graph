@@ -45,3 +45,11 @@
 .ol-popup-closer:after {
 	content: "✖";
 }
+
+.rotate-north {
+	top: 65px;
+	left: .5em;
+}
+.ol-touch .rotate-north {
+	top: 80px;
+}

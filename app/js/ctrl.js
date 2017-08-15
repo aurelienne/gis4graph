@@ -38,18 +38,59 @@ app.controller('MapController', function($scope, $http, $routeParams) {
 	 */
 
 
+	/*
+	 * button download
+	 * 
+	 */
+	var fctDownload  = function(opt_options) {
+
+		var options = opt_options || {};
+
+		var button = document.createElement('button');
+		button.innerHTML = 'D';
+
+		var this_ = this;
+		var handleRotateNorth = function() {
+			window.open('../out/'+$routeParams.id+'/out.zip');
+		};
+
+		button.addEventListener('click', handleRotateNorth, false);
+		button.addEventListener('touchstart', handleRotateNorth, false);
+
+		var element = document.createElement('div');
+		element.className = 'rotate-north ol-unselectable ol-control';
+		element.appendChild(button);
+
+		ol.control.Control.call(this, {
+			element : element,
+			target : options.target
+		});
+
+	};
+	ol.inherits(fctDownload, ol.control.Control); 
+
+	/*
+	 * fim button
+	 */	
+	
 	var map = new ol.Map({
-		overlays: [overlay],
+		controls : ol.control.defaults({
+			attributionOptions : /** @type {olx.control.AttributionOptions} */( {
+				collapsible : false
+			})
+		}).extend([new fctDownload()]),
+		overlays : [overlay],
 		target : 'map',
 		layers : [new ol.layer.Tile({
 			source : new ol.source.OSM()
 		})],
 		view : new ol.View({
 			center : ol.proj.fromLonLat([-42.62, -22.34]),
-			zoom : 8
+			zoom : 8,
+			rotation : 0
 		})
 	});
-	
+
 
 	/**
 	* Add a click handler to the map to render the popup.
@@ -60,20 +101,22 @@ app.controller('MapController', function($scope, $http, $routeParams) {
 			return feature;
 		});
 		
-		var txt = 
-			'Coef. Aglom: '+feature.get('coef_aglom')+'<br>'+
-			'Grau: '+feature.get('grau')+'<br>'+
-			'Betweeness: '+feature.get('betweeness')+'<br>'+
-			'Menor Cam. Médio: '+feature.get('mencamed')+'<br>'+
-			'Closeness: '+feature.get('closeness')+'<br>'+
-			'Strahler:'+feature.get('strahler')+'<br>'+
-			'Gid: '+feature.get('gid')+'<br>';
-		
-		var coordinate = evt.coordinate;
-		var hdms = ol.coordinate.toStringHDMS(ol.proj.transform(coordinate, 'EPSG:3857', 'EPSG:4326'));
-
-		content.innerHTML = '<p>Propriedades:</p><code>' +txt+ '</code>';
-		overlay.setPosition(coordinate);
+		if (feature) {
+			var txt = 
+				'Coef. Aglom: '+feature.get('coef_aglom')+'<br>'+
+				'Grau: '+feature.get('grau')+'<br>'+
+				'Betweeness: '+feature.get('betweeness')+'<br>'+
+				'Menor Cam. Médio: '+feature.get('mencamed')+'<br>'+
+				'Closeness: '+feature.get('closeness')+'<br>'+
+				'Strahler:'+feature.get('strahler')+'<br>'+
+				'Gid: '+feature.get('gid')+'<br>';
+			
+			var coordinate = evt.coordinate;
+			var hdms = ol.coordinate.toStringHDMS(ol.proj.transform(coordinate, 'EPSG:3857', 'EPSG:4326'));
+	
+			content.innerHTML = '<p>Propriedades:</p><code>' +txt+ '</code>';
+			overlay.setPosition(coordinate);
+		}
 	}); 
 
 	
