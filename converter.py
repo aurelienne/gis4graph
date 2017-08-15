@@ -1,7 +1,6 @@
 """
 GIS4Graph/converter.py
 Developed by Aurelienne Jorge (aurelienne@gmail.com)
-01/2017
 """
 
 import psycopg2
@@ -16,6 +15,7 @@ import sys
 from unicodedata import normalize
 import zipfile
 import subprocess
+import datetime
 
 config = configparser.ConfigParser()
 py_path = os.path.dirname(os.path.abspath(__file__))
@@ -29,10 +29,11 @@ SRID = config.get('DB','srid')
 
 class Database:
 
-    def __init__(self, file_in, file_out):
+    def __init__(self, file_in, file_out, pid):
         self.conn = None
         self.file_in = file_in
         self.file_out = file_out
+        self.pid = str(pid.replace('-', ''))
 
         self.cria_database()
         self.importa_shapefile()
@@ -55,13 +56,13 @@ class Database:
 
     def importa_shapefile(self):
         os.environ['PGPASSWORD'] = passDB
-        os.system('shp2pgsql -s '+SRID+' -d -I -W "latin1" '+self.file_in+' public.s2g_nodes | psql -h '+hostDB+' -p '+portDB+' -d '+nameDB+' -U '+userDB+' -w')
+        os.system('shp2pgsql -s '+SRID+' -d -I -W "latin1" '+self.file_in+' public.s2g_nodes_'+self.pid+' | psql -h '+hostDB+' -p '+portDB+' -d '+nameDB+' -U '+userDB+' -w')
         cur = self.conn.cursor()
-        cur.execute('alter table s2g_nodes add column grau smallint')
-        cur.execute('alter table s2g_nodes add column coef_aglom numeric(6,2)')
-        cur.execute('alter table s2g_nodes add column mencamed character varying')
-        cur.execute('alter table s2g_nodes add column betweeness numeric(14,6)')
-        cur.execute('alter table s2g_nodes add column closeness numeric(6,4)')
+        cur.execute('alter table s2g_nodes_'+self.pid+' add column grau smallint')
+        cur.execute('alter table s2g_nodes_'+self.pid+' add column coef_aglom numeric(6,2)')
+        cur.execute('alter table s2g_nodes_'+self.pid+' add column mencamed character varying')
+        cur.execute('alter table s2g_nodes_'+self.pid+' add column betweeness numeric(14,6)')
+        cur.execute('alter table s2g_nodes_'+self.pid+' add column closeness numeric(6,4)')
         cur.close()
         self.conn.commit()
 
@@ -69,17 +70,17 @@ class Database:
         cur_de = self.conn.cursor()
         cur_para = self.conn.cursor()
         cur = self.conn.cursor()
-        cur.execute('truncate table s2g_conexoes')
-        self.conn.commit()
+        #cur.execute('truncate table s2g_conexoes_')
+        #self.conn.commit()
 
-        cur_de.execute('select gid from s2g_nodes order by 1')
+        cur_de.execute('select gid from s2g_nodes_'+self.pid+' order by 1')
         for result_de in cur_de:
             id_trecho = result_de[0]
-            cur_para.execute('select b.gid from s2g_nodes a, s2g_nodes b where st_intersects(a.geom, b.geom) and a.gid = %s and b.gid <> a.gid', (id_trecho,))
+            cur_para.execute('select b.gid from s2g_nodes_'+self.pid+' a, s2g_nodes_'+self.pid+' b where st_intersects(a.geom, b.geom) and a.gid = %s and b.gid <> a.gid', (id_trecho,))
             for result_para in cur_para:
                 conexao = result_para[0]
                 if self.verifica_conexao(id_trecho, conexao) == False:
-                    cur.execute('insert into s2g_conexoes (de,para) values (%s,%s)', (id_trecho, conexao))
+                    cur.execute('insert into s2g_conexoes_'+self.pid+' (de,para) values (%s,%s)', (id_trecho, conexao))
                     self.conn.commit()
 
         cur_de.close()
@@ -89,7 +90,7 @@ class Database:
     def verifica_conexao(self, id_trecho, conexao):
         existe = False
         cur = self.conn.cursor()
-        cur.execute('select count(*) from s2g_conexoes where (de = %s and para = %s) or (de = %s and para = %s)',(conexao,id_trecho,id_trecho,conexao))
+        cur.execute('select count(*) from s2g_conexoes_'+self.pid+' where (de = %s and para = %s) or (de = %s and para = %s)',(conexao,id_trecho,id_trecho,conexao))
         cont = int(cur.fetchone()[0])
         if cont > 0:
             existe = True
@@ -98,7 +99,7 @@ class Database:
 
     def get_qtd_registros(self):
         cur = self.conn.cursor()
-        cur.execute('select count(*) from s2g_nodes')
+        cur.execute('select count(*) from s2g_nodes_'+self.pid)
         qtd_registros = cur.fetchone()[0]
         cur.close()
         return qtd_registros
@@ -106,7 +107,7 @@ class Database:
     def get_conexoes(self):
         lista_conexoes = []
         cur = self.conn.cursor()
-        cur.execute('select de, para from s2g_conexoes inner join s2g_nodes on de = gid')
+        cur.execute('select de, para from s2g_conexoes_'+self.pid+' inner join s2g_nodes_'+self.pid+' on de = gid')
         for result in cur:
             de, para = result[0], result[1]
             lista_conexoes.append((de, para))
@@ -115,10 +116,10 @@ class Database:
 
     def cria_tabela_geral(self):
         cur = self.conn.cursor()
-        cur.execute('drop table if exists s2g')
+        cur.execute('drop table if exists s2g_'+self.pid)
         self.conn.commit()
 
-        cur.execute('create table s2g ( \
+        cur.execute('create table s2g_'+self.pid+' ( \
                      ordem smallint, \
                      comprimento smallint, \
                      grau_medio numeric(6,2), \
@@ -126,74 +127,74 @@ class Database:
                      diametro smallint, \
                      densidade numeric(6,4))')
         self.conn.commit()
-        cur.execute('insert into s2g (ordem) values (0)')
+        cur.execute('insert into s2g_'+self.pid+' (ordem) values (0)')
         self.conn.commit()
         cur.close()
 
     def cria_tabela_conexoes(self):
         cur = self.conn.cursor()
-        cur.execute('drop table if exists s2g_conexoes')
+        cur.execute('drop table if exists s2g_conexoes_'+self.pid)
         self.conn.commit()
 
-        cur.execute('create table s2g_conexoes ( \
+        cur.execute('create table s2g_conexoes_'+self.pid+' ( \
                      id serial, \
                      de smallint, \
                      para smallint,'
-                    'CONSTRAINT s2g_conex_pkey PRIMARY KEY (id))')
+                    'CONSTRAINT s2g_conex_'+self.pid+'_pkey PRIMARY KEY (id))')
         self.conn.commit()
         cur.close()
 
     def update_ordem_comp_densidade(self, ordem, comp, dens):
         cur = self.conn.cursor()
-        cur.execute('update s2g set ordem = %s, comprimento = %s, densidade = %s', (ordem, comp, dens))
+        cur.execute('update s2g_'+self.pid+' set ordem = %s, comprimento = %s, densidade = %s', (ordem, comp, dens))
         self.conn.commit()
         cur.close()
 
     def update_grau_vertice(self, id, grau):
         cur = self.conn.cursor()
-        cur.execute('update s2g_nodes set grau = %s where gid = %s', (grau, id))
+        cur.execute('update s2g_nodes_'+self.pid+' set grau = %s where gid = %s', (grau, id))
         self.conn.commit()
         cur.close()
 
     def update_grau_medio(self, grau_medio):
         cur = self.conn.cursor()
-        cur.execute('update s2g set grau_medio = %s', (grau_medio, ))
+        cur.execute('update s2g_'+self.pid+' set grau_medio = %s', (grau_medio, ))
         self.conn.commit()
         cur.close()
 
     def update_coef_aglomeracao(self, id, coef):
         cur = self.conn.cursor()
-        cur.execute('update s2g_nodes set coef_aglom = %s where gid = %s', (coef, id))
+        cur.execute('update s2g_nodes_'+self.pid+' set coef_aglom = %s where gid = %s', (coef, id))
         self.conn.commit()
         cur.close()
 
     def update_coef_aglom_medio(self, coef):
         cur = self.conn.cursor()
-        cur.execute('update s2g set coef_aglom_medio = %s', (coef, ))
+        cur.execute('update s2g_'+self.pid+' set coef_aglom_medio = %s', (coef, ))
         self.conn.commit()
         cur.close()
 
     def update_menor_caminho_medio(self, id, valor):
         cur = self.conn.cursor()
-        cur.execute('update s2g_nodes set mencamed = %s where gid = %s', (valor, id))
+        cur.execute('update s2g_nodes_'+self.pid+' set mencamed = %s where gid = %s', (valor, id))
         self.conn.commit()
         cur.close()
 
     def update_diametro(self, diametro):
         cur = self.conn.cursor()
-        cur.execute('update s2g set diametro = %s', (diametro,))
+        cur.execute('update s2g_'+self.pid+' set diametro = %s', (diametro,))
         self.conn.commit()
         cur.close()
 
     def update_betweeness(self, id, valor):
         cur = self.conn.cursor()
-        cur.execute('update s2g_nodes set betweeness = %s where gid = %s', (valor, id))
+        cur.execute('update s2g_nodes_'+self.pid+' set betweeness = %s where gid = %s', (valor, id))
         self.conn.commit()
         cur.close()
 
     def update_closeness(self, id, valor):
         cur = self.conn.cursor()
-        cur.execute('update s2g_nodes set closeness = %s where gid = %s', (valor, id))
+        cur.execute('update s2g_nodes_'+self.pid+' set closeness = %s where gid = %s', (valor, id))
         self.conn.commit()
         cur.close()
 
@@ -202,13 +203,13 @@ class Database:
 
     def exporta_shapefile(self):
        os.system('pgsql2shp -h '+hostDB+' -p '+portDB+' -u '+userDB+' -P '+passDB+' -f '+self.file_out+
-                 ' '+nameDB+' "select * from s2g_nodes, s2g"')
+                 ' '+nameDB+' "select * from s2g_nodes_'+self.pid+', s2g_'+self.pid+'"')
 
     def export_prop_json(self, gid):
         cur = self.conn.cursor()
         cols = ('gid', 'grau', 'coef_aglom', 'mencamed', 'betweeness', 'closeness')
         results = []
-        cur.execute('select gid, grau, coef_aglom, mencamed, betweeness, closeness from s2g_nodes where gid = %s', (gid,))
+        cur.execute('select gid, grau, coef_aglom, mencamed, betweeness, closeness from s2g_nodes_'+self.pid+' where gid = %s', (gid,))
         result = cur.fetchone()
         results.append(dict(zip(cols, result)))
         jsondata = simplejson.dumps(results,use_decimal=True)
@@ -219,7 +220,7 @@ class Database:
 
     def export_geojson(self):
         cur = self.conn.cursor()
-        cur.execute('select gid, st_asgeojson(geom) from s2g_nodes order by gid')
+        cur.execute('select gid, st_asgeojson(geom) from s2g_nodes_'+self.pid+' order by gid')
         gjson = '{ "type": "FeatureCollection", "features": ['
         for result in cur:
             gid = result[0]
@@ -235,7 +236,7 @@ class Database:
         ft = open(self.file_out+'.txt','w')
         ft.write('----------\nLABELS\n---------\n')
         cur = self.conn.cursor()
-        cur.execute('select gid, coef_aglom, mencamed, betweeness, closeness from s2g_nodes order by gid')
+        cur.execute('select gid, coef_aglom, mencamed, betweeness, closeness from s2g_nodes_'+self.pid+' order by gid')
         for result in cur:
             gid = str(result[0])
             coef_aglom = str(result[1])
@@ -253,6 +254,14 @@ class Database:
             para = item[1]
             ft.write(str(de)+','+str(para)+'\n')
         ft.close()
+        
+    def drop_tables(self):
+        cur = self.conn.cursor()
+        cur.execute('drop table if exists s2g_' + self.pid)
+        cur.execute('drop table if exists s2g_nodes_' + self.pid)
+        cur.execute('drop table if exists s2g_conexoes_' + self.pid)
+        self.conn.commit()
+
 
 class Grafo:
 
@@ -307,7 +316,8 @@ class Grafo:
 
     def menor_caminho_medio(self, db):
         for i in range(0, self.grafo.vcount()):
-            caminhoMed = sum(self.grafo.shortest_paths_dijkstra(source=i)[0])/float(self.grafo.vcount()-1)
+            mencam = self.grafo.shortest_paths_dijkstra(source=i)[0]
+            caminhoMed = mean(mencam[x] for x in range(len(mencam)) if (mencam[x]!=float('Inf'))and(mencam[x]!=0))
             db.update_menor_caminho_medio(i+1, caminhoMed)
         diametro = self.grafo.diameter()
         db.update_diametro(diametro)
@@ -331,19 +341,24 @@ class Grafo:
 
 class Shp2Graph:
 
-    def __init__(self, fnamein, fnameout):
-        db = Database(fnamein, fnameout)
+    def __init__(self, fnamein, fnameout, pid):
+        print(datetime.datetime.now())
+        db = Database(fnamein, fnameout, pid)
+        print("import realizado - "+str(datetime.datetime.now()))
         qv = db.get_qtd_registros()
         lc = db.get_conexoes()
         self.grf = Grafo(qv, lc, fnameout)
+        print("grafo construido - " + str(datetime.datetime.now()))
         db.update_ordem_comp_densidade(self.grf.ordem, self.grf.comp, self.grf.densidade)
 
         self.realiza_calculos(db)
+        print("calc realizado - " + str(datetime.datetime.now()))
         #self.grf.plota_histograma()
         db.exporta_shapefile()
         db.export_geojson()
         db.export_txt()
         self.compress_files(fnameout)
+        db.drop_tables()
         db.encerra_conexao()
 
     def realiza_calculos(self, db):
@@ -363,10 +378,11 @@ class Shp2Graph:
 
 if __name__ == '__main__':
     print(len(sys.argv))
-    if len(sys.argv) == 3:
+    if len(sys.argv) == 4:
         fnamein = sys.argv[1]
         fnameout = sys.argv[2]
-        Shp2Graph(fnamein,fnameout)
+        pid = sys.argv[3]
+        Shp2Graph(fnamein, fnameout, pid)
     else:
-        print('Informar path do arquivo de entrada e path de saida!')
+        print('Informar path do arquivo de entrada, path de saida e id do processo!')
         sys.exit()

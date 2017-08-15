@@ -27,12 +27,12 @@ def upload_file():
 
 @app.route('/converter/<path:path>', methods = ['GET', 'POST'])
 def convert_shp2graph(path):
-    dir = str( uuid.uuid4())
+    pid = str( uuid.uuid4())
     if request.method == 'GET':
-        os.makedirs('out/'+dir)
+        os.makedirs('out/'+pid)
         import converter as c
-        c.Shp2Graph(path, 'out/'+dir+'/out',dir)
-        return redirect("/app/#/map/"+dir, code=302)
+        c.Shp2Graph(path, 'out/'+pid+'/out', pid)
+        return redirect("/app/#/map/"+pid, code=302)
 
 
 @app.route('/app')
