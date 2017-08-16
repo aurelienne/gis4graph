@@ -4,7 +4,6 @@ app.controller('HomeController', function($scope, $http) {
 
 app.controller('MapController', function($scope, $http, $routeParams) {
 
-
 	/*popup
 	* 
 	*/
@@ -143,11 +142,15 @@ app.controller('MapController', function($scope, $http, $routeParams) {
 	
 
 	
-	
+	$scope.labels = {
+		carregando : true,
+		legenda: true
+	};
 	$http({
 		method : 'GET',
 		url : '../out/'+$routeParams.id+'/out.json'
 	}).then(function successCallback(r) {
+		$scope.labels.carregando = false;
 		data = r.data;
 		console.log(data);
 		$scope.limites.coef_aglom.max = data.features[0].properties.coef_aglom;
@@ -264,4 +267,3 @@ app.controller('MapController', function($scope, $http, $routeParams) {
 
 
 });
-

@@ -1,4 +1,12 @@
 <div>
+	<div class="labelCarregando" ng-show="labels.carregando">Carregando</div>
+	<div class="labelLegenda"  ng-show="labels.legenda">
+		<table>
+			<tr ng-repeat="c in cores">
+				<td style="background: {{cores[$index]}}">Grau {{$index}}</td>
+			</tr>
+		</table>
+	</div>
 	<div id="map" class="map"></div>
 	<div id="popup" class="ol-popup">
 		<a href="#" id="popup-closer" class="ol-popup-closer"></a>
