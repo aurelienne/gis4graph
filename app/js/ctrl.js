@@ -72,12 +72,23 @@ app.controller('MapController', function($scope, $http, $routeParams) {
 	 * fim button
 	 */	
 	
+
+	var mousePositionControl = new ol.control.MousePosition({
+		coordinateFormat : ol.coordinate.createStringXY(4),
+		projection : 'EPSG:4326',
+		// comment the following two lines to have the mouse position
+		// be placed within the map.
+		className : 'custom-mouse-position',
+		target : document.getElementById('mouse-position'),
+		undefinedHTML : '&nbsp;'
+	}); 
+      	
 	var map = new ol.Map({
 		controls : ol.control.defaults({
 			attributionOptions : /** @type {olx.control.AttributionOptions} */( {
 				collapsible : false
 			})
-		}).extend([new fctDownload()]),
+		}).extend([new fctDownload(),mousePositionControl]),
 		overlays : [overlay],
 		target : 'map',
 		layers : [new ol.layer.Tile({
@@ -118,6 +129,12 @@ app.controller('MapController', function($scope, $http, $routeParams) {
 		}
 	}); 
 
+
+	map.on("move", function(e) {
+		console.log('aqui');
+		var position = e.map.getLonLatFromViewPortPx(e.xy);
+		OpenLayers.Util.getElement("tooltip").innerHTML = "<label>Latitude: " + position.lat + "</label><br/><label>Longitude: " + position.lon + "</label>";
+	}); 
 
 	$scope.cores = [
 		"#777777", 
