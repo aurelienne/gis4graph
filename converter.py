@@ -70,8 +70,6 @@ class Database:
         cur_de = self.conn.cursor()
         cur_para = self.conn.cursor()
         cur = self.conn.cursor()
-        #cur.execute('truncate table s2g_conexoes_')
-        #self.conn.commit()
 
         cur_de.execute('select gid from s2g_nodes_'+self.pid+' order by 1')
         for result_de in cur_de:
@@ -81,7 +79,7 @@ class Database:
                 conexao = result_para[0]
                 if self.verifica_conexao(id_trecho, conexao) == False:
                     cur.execute('insert into s2g_conexoes_'+self.pid+' (de,para) values (%s,%s)', (id_trecho, conexao))
-                    self.conn.commit()
+        self.conn.commit()
 
         cur_de.close()
         cur_para.close()
@@ -153,7 +151,6 @@ class Database:
     def update_grau_vertice(self, id, grau):
         cur = self.conn.cursor()
         cur.execute('update s2g_nodes_'+self.pid+' set grau = %s where gid = %s', (grau, id))
-        self.conn.commit()
         cur.close()
 
     def update_grau_medio(self, grau_medio):
@@ -165,7 +162,6 @@ class Database:
     def update_coef_aglomeracao(self, id, coef):
         cur = self.conn.cursor()
         cur.execute('update s2g_nodes_'+self.pid+' set coef_aglom = %s where gid = %s', (coef, id))
-        self.conn.commit()
         cur.close()
 
     def update_coef_aglom_medio(self, coef):
@@ -177,7 +173,6 @@ class Database:
     def update_menor_caminho_medio(self, id, valor):
         cur = self.conn.cursor()
         cur.execute('update s2g_nodes_'+self.pid+' set mencamed = %s where gid = %s', (valor, id))
-        self.conn.commit()
         cur.close()
 
     def update_diametro(self, diametro):
@@ -189,13 +184,11 @@ class Database:
     def update_betweeness(self, id, valor):
         cur = self.conn.cursor()
         cur.execute('update s2g_nodes_'+self.pid+' set betweeness = %s where gid = %s', (valor, id))
-        self.conn.commit()
         cur.close()
 
     def update_closeness(self, id, valor):
         cur = self.conn.cursor()
         cur.execute('update s2g_nodes_'+self.pid+' set closeness = %s where gid = %s', (valor, id))
-        self.conn.commit()
         cur.close()
 
     def encerra_conexao(self):
@@ -254,7 +247,7 @@ class Database:
             para = item[1]
             ft.write(str(de)+','+str(para)+'\n')
         ft.close()
-        
+
     def drop_tables(self):
         cur = self.conn.cursor()
         cur.execute('drop table if exists s2g_' + self.pid)
@@ -301,7 +294,7 @@ class Grafo:
         for grau in self.grafo.degree():
             i += 1
             db.update_grau_vertice(i, grau)
-
+        db.conn.commit()
         self.grau_medio = sum(self.grafo.degree()) / self.grafo.vcount()
         db.update_grau_medio(self.grau_medio)
 
@@ -310,7 +303,7 @@ class Grafo:
         for coef in self.grafo.transitivity_local_undirected():
             i += 1
             db.update_coef_aglomeracao(i, coef)
-
+        db.conn.commit()
         self.coef_aglom_medio = self.grafo.transitivity_avglocal_undirected(mode="zero")
         db.update_coef_aglom_medio(self.coef_aglom_medio)
 
@@ -319,6 +312,7 @@ class Grafo:
             mencam = self.grafo.shortest_paths_dijkstra(source=i)[0]
             caminhoMed = mean(mencam[x] for x in range(len(mencam)) if (mencam[x]!=float('Inf'))and(mencam[x]!=0))
             db.update_menor_caminho_medio(i+1, caminhoMed)
+        db.conn.commit()
         diametro = self.grafo.diameter()
         db.update_diametro(diametro)
         self.diametro = diametro
@@ -335,8 +329,10 @@ class Grafo:
     def centralidade(self, db):
         for i in range(0, self.grafo.vcount()):
             db.update_betweeness(i+1, self.grafo.betweenness(vertices=i))
+        db.conn.commit()
         for i in range(0, self.grafo.vcount()):
             db.update_closeness(i+1, self.grafo.closeness(vertices=i))
+        db.conn.commit()
 
 
 class Shp2Graph:
@@ -363,9 +359,13 @@ class Shp2Graph:
 
     def realiza_calculos(self, db):
         self.grf.calcula_grau(db)
+        print("Grau calculado - "+str(datetime.datetime.now()))
         self.grf.calcula_coef(db)
+        print("Coef calculado - "+str(datetime.datetime.now()))
         self.grf.menor_caminho_medio(db)
+        print("Men. Caminho calculado - "+str(datetime.datetime.now()))
         self.grf.centralidade(db)
+        print("Centralidade calculada - "+str(datetime.datetime.now()))
 
     def compress_files(self, fnameout):
         zipf = zipfile.ZipFile(fnameout+'.zip', 'w', zipfile.ZIP_DEFLATED)
