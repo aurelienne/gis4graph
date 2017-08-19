@@ -1,3 +1,14 @@
+.g4g-filter {
+	z-index: 10000;
+	background-color: #FFFFFF;
+	color: #000000;
+	position: fixed;
+ 	top:  100px;
+ 	left: 5px;
+	padding: 2px;
+}
+
+
 .labelCarregando {
 	z-index: 10000;
 	background-color: #C3C3C3;

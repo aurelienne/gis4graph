@@ -1,5 +1,5 @@
 <div>
-	<div class="labelPosition"><b>GIS4Graph:</b> <label id="mouse-position"></label></div>
+	<div class="labelPosition"><b>GIS4Graph</b> | <label id="mouse-position"></label></div>
 	<div class="labelCarregando" ng-show="labels.carregando">Carregando</div>
 	<div class="labelLegenda"  ng-show="labels.legenda">
 		<table>
@@ -7,6 +7,41 @@
 				<td style="background: {{cores[$index]}}">Grau {{$index}}</td>
 			</tr>
 		</table>
+	</div>
+	
+	<div class="g4g-filter">
+		<button ng-click="filter.showFilter()" >F</button><span ng-show="filter.show"> Filtrar</span>
+		<div ng-show="filter.show">
+			<table class="table">
+				<tr><td>Coef. Aglo.</td>
+					<td><input type="number" style="width: 100px" ng-model="limites.coef_aglom.min"></td>
+					<td><input type="number" style="width: 100px" ng-model="limites.coef_aglom.max"></td>
+				</tr>
+				<tr><td>Grau</td>
+					<td><input type="number" style="width: 100px" ng-model="limites.grau.min"></td>
+					<td><input type="number" style="width: 100px" ng-model="limites.grau.max"></td>
+				</tr>
+
+				<tr><td>Betweeness</td>
+					<td><input type="number" style="width: 100px" ng-model="limites.betweeness.min"></td>
+					<td><input type="number" style="width: 100px" ng-model="limites.betweeness.max"></td>
+				</tr>
+
+				<tr><td>Min Cam. Médio</td>
+					<td><input type="number" style="width: 100px" ng-model="limites.mencamed.min"></td>
+					<td><input type="number" style="width: 100px" ng-model="limites.mencamed.max"></td>
+				</tr>
+
+				<tr><td>Closeness</td>
+					<td><input type="number" style="width: 100px" ng-model="limites.closeness.min"></td>
+					<td><input type="number" style="width: 100px" ng-model="limites.closeness.max"></td>
+				</tr>
+			</table>
+			<center>
+			<button class="btn" ng-click="filter.filtrar()">Aplicar Filtro</button>
+			<button class="btn" ng-click="filter.original()">Remover Filtro</button>
+			</center>
+		</div>
 	</div>
 	<div id="map" class="map"></div>
 	<div id="popup" class="ol-popup">

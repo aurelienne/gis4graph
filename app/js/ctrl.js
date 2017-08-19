@@ -2,7 +2,7 @@ app.controller('HomeController', function($scope, $http) {
 
 });
 
-app.controller('MapController', function($scope, $http, $routeParams) {
+app.controller('MapController', function($scope, $http, $routeParams,$location, Notification) {
 
 	/*popup
 	* 
@@ -163,13 +163,20 @@ app.controller('MapController', function($scope, $http, $routeParams) {
 		carregando : true,
 		legenda: true
 	};
+	var url = '../out/'+$routeParams.id+'/';
+	if ($routeParams.filter != undefined) {
+		url += $routeParams.filter+'.json'; 
+	} else {
+		url += 'out.json'; 
+	}
+	
 	$http({
 		method : 'GET',
-		url : '../out/'+$routeParams.id+'/out.json'
+		url : url
 	}).then(function successCallback(r) {
 		$scope.labels.carregando = false;
 		data = r.data;
-		console.log(data);
+		//console.log(data);
 		$scope.limites.coef_aglom.max = data.features[0].properties.coef_aglom;
 		$scope.limites.coef_aglom.min = data.features[0].properties.coef_aglom;
 
@@ -192,6 +199,11 @@ app.controller('MapController', function($scope, $http, $routeParams) {
 		$scope.limites.strahler.min = data.features[0].properties.strahler;
 
 		for (var i=1;i<data.features.length;i++) {
+			/*
+			if (data.features[i].properties.coef_aglom  == "") {
+				console.log(data.features[i] );
+			}
+			*/
 			if (data.features[i].properties.coef_aglom > $scope.limites.coef_aglom.max)
 				$scope.limites.coef_aglom.max = data.features[i].properties.coef_aglom;  
 			if (data.features[i].properties.coef_aglom < $scope.limites.coef_aglom.min)
@@ -213,9 +225,9 @@ app.controller('MapController', function($scope, $http, $routeParams) {
 				data.features[i].properties.mencamed = 0;
 			*/
 			if (data.features[i].properties.mencamed > $scope.limites.mencamed.max)
-				$scope.limites.mencamed.max = data.features[i].properties.mencamed;  
+				$scope.limites.mencamed.max = parseFloat(data.features[i].properties.mencamed);  
 			if (data.features[i].properties.mencamed < $scope.limites.mencamed.min)
-				$scope.limites.mencamed.min = data.features[i].properties.mencamed;  
+				$scope.limites.mencamed.min = parseFloat( data.features[i].properties.mencamed);  
 
 			if (data.features[i].properties.closeness > $scope.limites.closeness.max)
 				$scope.limites.closeness.max = data.features[i].properties.closeness;  
@@ -235,12 +247,13 @@ app.controller('MapController', function($scope, $http, $routeParams) {
 				
 
 		}
-		console.log($scope.limites);
+		//console.log($scope.limites);
 		$scope.obj = data;
 		addLayer();
 		
 	}, function errorCallback(r) {
-		console.log(r);
+		$scope.labels.carregando = false;
+		Notification.warning(r);
 	});
 			
 
@@ -282,5 +295,35 @@ app.controller('MapController', function($scope, $http, $routeParams) {
 	};
 
 
+	/*
+	 * FILTER
+	 */
+	
+	$scope.filter = {
+		show: false,
+		showFilter: function() {
+			$scope.filter.show = !$scope.filter.show;
+			if ($scope.filter.show) {
+				//
+			}
+		},
+		filtrar: function() {
+			str = 'CA_S'+$scope.limites.coef_aglom.min+'_E'+$scope.limites.coef_aglom.max+'__'+
+				'G_S'+$scope.limites.grau.min+'_E'+$scope.limites.grau.max+'__'+
+				'B_S'+$scope.limites.betweeness.min+'_E'+$scope.limites.betweeness.max+'__'+
+				'MC_S'+$scope.limites.mencamed.min+'_E'+$scope.limites.mencamed.max+'__'+
+				'C_S'+$scope.limites.closeness.min+'_E'+$scope.limites.closeness.max+'__';
+			//console.log(str);
+			$location.path('map/'+$routeParams.id+'/'+str);
+		},
+		original: function() {
+			$location.path('map/'+$routeParams.id);
+		}
+	};
+
+	/*
+	 * 
+	 */
+	
 
 });
