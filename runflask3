@@ -3,5 +3,5 @@
 export FLASK_APP=server2.py
 
 source /home/aurelienne/miniconda3/bin/activate /home/aurelienne/miniconda3/envs/s4g
-python3 -m flask run --host=0.0.0.0 --port=80 &
+python3 -m flask run --host=0.0.0.0 --port=80 
 
