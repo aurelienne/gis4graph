@@ -13,6 +13,12 @@ app.config(function($routeProvider, $locationProvider, $sceDelegateProvider) {
 		templateUrl : 'view/map.html',
 		controller : 'MapController',
 
+	}).when('/graph/:id', {
+		templateUrl : 'view/graph.html',
+		controller : 'GraphController',
+	}).when('/graph/:id/:filter', {
+		templateUrl : 'view/graph.html',
+		controller : 'GraphController',
 
 	}).otherwise({
 		templateUrl : 'view/home.html',
