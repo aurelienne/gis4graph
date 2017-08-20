@@ -64,7 +64,7 @@ class Database:
         cur = self.conn.cursor()
         cur.execute('alter table s2g_nodes_'+self.pid+' add column grau smallint')
         cur.execute('alter table s2g_nodes_'+self.pid+' add column coef_aglom numeric(6,2)')
-        cur.execute('alter table s2g_nodes_'+self.pid+' add column mencamed real')
+        cur.execute('alter table s2g_nodes_'+self.pid+' add column mencamed numeric(14,4)')
         cur.execute('alter table s2g_nodes_'+self.pid+' add column betweeness numeric(14,6)')
         cur.execute('alter table s2g_nodes_'+self.pid+' add column closeness numeric(6,4)')
         cur.close()
@@ -222,8 +222,10 @@ class Database:
             pid = self.pid
         cur = self.conn.cursor()
         cur.execute('select gid, st_asgeojson(geom) from s2g_nodes_'+pid+' '+where+' order by gid')
-        gjson = '{ "type": "FeatureCollection", "features": ['
+        gjson = '{ "type": "FeatureCollection", "features": [ '
+        print(cur)
         for result in cur:
+            print(result)
             gid = result[0]
             prop_json = self.export_prop_json(gid, pid)
             gjson = gjson+'{ "type": "Feature", "geometry": ' + result[1] + ', "properties": '+prop_json+'},'
@@ -255,6 +257,7 @@ class Database:
         # Puts together nodes and edges and dumps all as json
         grafodata = dict(labels=results, links=lista)
         jsondata = simplejson.dumps(grafodata, use_decimal=True)
+        jsondata = jsondata.replace('NaN','""')
         jg = open(self.file_out + '_grafo.json', 'w')
         jg.write(jsondata)
         jg.close()
