@@ -64,7 +64,7 @@ class Database:
         cur = self.conn.cursor()
         cur.execute('alter table s2g_nodes_'+self.pid+' add column grau smallint')
         cur.execute('alter table s2g_nodes_'+self.pid+' add column coef_aglom numeric(6,2)')
-        cur.execute('alter table s2g_nodes_'+self.pid+' add column mencamed character varying')
+        cur.execute('alter table s2g_nodes_'+self.pid+' add column mencamed real')
         cur.execute('alter table s2g_nodes_'+self.pid+' add column betweeness numeric(14,6)')
         cur.execute('alter table s2g_nodes_'+self.pid+' add column closeness numeric(6,4)')
         cur.close()
@@ -198,7 +198,7 @@ class Database:
     def encerra_conexao(self):
         self.conn.close()
 
-    def exporta_shapefile(self):
+    def export_shapefile(self):
        os.system('pgsql2shp -h '+hostDB+' -p '+portDB+' -u '+userDB+' -P '+passDB+' -f '+self.file_out+
                  ' '+nameDB+' "select * from s2g_nodes_'+self.pid+', s2g_'+self.pid+'"')
 
@@ -352,17 +352,17 @@ class Shp2Graph:
     def __init__(self, fnamein, fnameout, pid):
         print(datetime.datetime.now())
         db = Database(fnamein, fnameout, pid)
-        print("import realizado - "+str(datetime.datetime.now()))
+        print("Import realizado - "+str(datetime.datetime.now()))
         qv = db.get_qtd_registros()
         lc = db.get_conexoes()
         self.grf = Grafo(qv, lc, fnameout)
-        print("grafo construido - " + str(datetime.datetime.now()))
+        print("Grafo construido - " + str(datetime.datetime.now()))
         db.update_ordem_comp_densidade(self.grf.ordem, self.grf.comp, self.grf.densidade)
 
         self.realiza_calculos(db)
-        print("calc realizado - " + str(datetime.datetime.now()))
+        print("Calculos realizados - " + str(datetime.datetime.now()))
         #self.grf.plota_histograma()
-        db.exporta_shapefile()
+        db.export_shapefile()
         db.export_geojson()
         db.export_grafojson()
         self.compress_files(fnameout)
@@ -371,13 +371,13 @@ class Shp2Graph:
 
     def realiza_calculos(self, db):
         self.grf.calcula_grau(db)
-        print("Grau calculado - "+str(datetime.datetime.now()))
+        print("> Grau calculado - "+str(datetime.datetime.now()))
         self.grf.calcula_coef(db)
-        print("Coef calculado - "+str(datetime.datetime.now()))
+        print("> Coef. Aglom. calculado - "+str(datetime.datetime.now()))
         self.grf.menor_caminho_medio(db)
-        print("Men. Caminho calculado - "+str(datetime.datetime.now()))
+        print("> Menor Caminho Médio calculado - "+str(datetime.datetime.now()))
         self.grf.centralidade(db)
-        print("Centralidade calculada - "+str(datetime.datetime.now()))
+        print("> Closeness e betweeness calculados - "+str(datetime.datetime.now()))
 
     def compress_files(self, fnameout):
         zipf = zipfile.ZipFile(fnameout+'.zip', 'w', zipfile.ZIP_DEFLATED)
