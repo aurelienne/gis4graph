@@ -1,5 +1,5 @@
 from flask import Flask, send_from_directory, request, redirect
-from flask_restful import reqparse, abort, Api, Resource
+#from flask_restful import reqparse, abort, Api, Resource
 from werkzeug import secure_filename
 import uuid
 import os
@@ -27,7 +27,7 @@ def upload_file():
 
 @app.route('/converter/<path:path>', methods = ['GET', 'POST'])
 def convert_shp2graph(path):
-    pid = str( uuid.uuid4())
+    pid = str(uuid.uuid4()).replace('-', '')
     if request.method == 'GET':
         os.makedirs('out/'+pid)
         import converter as c
@@ -50,6 +50,41 @@ def send_app(path):
 
 @app.route('/out/<path:path>')
 def send_out(path):
+    pathjson = path
+    print(pathjson)
+    if not os.path.exists(os.path.join('out', pathjson)):
+        dir, file = os.path.split(pathjson)
+        pid = dir
+        print(pid)
+        filters = file.split('__')
+        print(filters)
+        where = 'where '
+        tag = ''
+        for filter in filters[0:-1]:
+            opts=filter.split('_')
+            field = opts[0]
+            start = opts[1][1:]
+            end = opts[2][1:]
+            print(start, end)
+            if field == 'CA':
+                field = 'coef_aglom'
+            elif field == 'G':
+                field = 'grau'
+            elif field == 'B':
+                field = 'betweeness'
+            elif field == 'C':
+                field = 'closeness'
+            elif field == 'MC':
+                field = 'mencamed'
+            else:
+                continue
+            where = where+tag+field+' between '+str(start)+' and '+str(end)
+            tag = ' and '
+            print(where)
+
+        import converter as c
+        c.Database().export_geojson(where, pid, path[0:-5])
+
     return send_from_directory('out/', path)
 
 @app.route('/uid')

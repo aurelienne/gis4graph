@@ -29,15 +29,19 @@ SRID = config.get('DB','srid')
 
 class Database:
 
-    def __init__(self, file_in, file_out, pid):
+    def __init__(self, file_in='', file_out='', pid=''):
         self.conn = None
         self.file_in = file_in
         self.file_out = file_out
-        self.pid = str(pid.replace('-', ''))
+        self.pid = str(pid)
 
-        self.cria_database()
-        self.importa_shapefile()
-        self.mapeia_conexoes()
+        if file_in != '':
+            self.cria_database()
+            self.importa_shapefile()
+            self.mapeia_conexoes()
+        else:
+            self.conn = psycopg2.connect(
+                "host=" + hostDB + " port=" + portDB + " dbname=" + nameDB + " user=" + userDB + " password=" + passDB)
 
     def cria_database(self):
         os.environ['PGPASSWORD'] = passDB
@@ -198,11 +202,13 @@ class Database:
        os.system('pgsql2shp -h '+hostDB+' -p '+portDB+' -u '+userDB+' -P '+passDB+' -f '+self.file_out+
                  ' '+nameDB+' "select * from s2g_nodes_'+self.pid+', s2g_'+self.pid+'"')
 
-    def export_prop_json(self, gid):
+    def export_prop_json(self, gid, pid=''):
+        if pid == '':
+            pid = self.pid
         cur = self.conn.cursor()
         cols = ('gid', 'grau', 'coef_aglom', 'mencamed', 'betweeness', 'closeness')
         results = []
-        cur.execute('select gid, grau, coef_aglom, mencamed, betweeness, closeness from s2g_nodes_'+self.pid+' where gid = %s', (gid,))
+        cur.execute('select gid, grau, coef_aglom, mencamed, betweeness, closeness from s2g_nodes_'+pid+' where gid = %s', (gid,))
         result = cur.fetchone()
         results.append(dict(zip(cols, result)))
         jsondata = simplejson.dumps(results,use_decimal=True)
@@ -211,42 +217,48 @@ class Database:
         cur.close()
         return jsondata
 
-    def export_geojson(self):
+    def export_geojson(self, where='', pid='', out=''):
+        if pid == '':
+            pid = self.pid
         cur = self.conn.cursor()
-        cur.execute('select gid, st_asgeojson(geom) from s2g_nodes_'+self.pid+' order by gid')
+        cur.execute('select gid, st_asgeojson(geom) from s2g_nodes_'+pid+' '+where+' order by gid')
         gjson = '{ "type": "FeatureCollection", "features": ['
         for result in cur:
             gid = result[0]
-            prop_json = self.export_prop_json(gid)
+            prop_json = self.export_prop_json(gid, pid)
             gjson = gjson+'{ "type": "Feature", "geometry": ' + result[1] + ', "properties": '+prop_json+'},'
         cur.close()
         gjson = gjson[0:-1] + ']}'
-        gj = open(self.file_out+'.json','w')
+        if out == '':
+            out = self.file_out
+        gj = open(out+'.json','w')
         gj.write(gjson)
         gj.close()
 
-    def export_txt(self):
-        ft = open(self.file_out+'.txt','w')
-        ft.write('----------\nLABELS\n---------\n')
+    def export_grafojson(self):
+        #Dict of nodes
         cur = self.conn.cursor()
         cur.execute('select gid, coef_aglom, mencamed, betweeness, closeness from s2g_nodes_'+self.pid+' order by gid')
+        cols = ('gid', 'coef_aglom', 'mencamed', 'betweeness', 'closeness')
+        results = []
         for result in cur:
-            gid = str(result[0])
-            coef_aglom = str(result[1])
-            mencamed = str(result[2])
-            betweeness = str(result[3])
-            closeness = str(result[4])
+            results.append(dict(zip(cols, result)))
+        cur.close()
 
-            #nome = normalize('NFKD', nome).encode('ASCII','ignore').decode('ASCII')
-            ft.write(gid+',Coef. Aglom: '+coef_aglom+'\\nMenor Caminho Medio: '+mencamed+'\\nBetweness: '+betweeness+
-            '\\nCloseness: '+closeness+'\n')
-        ft.write('------\nDADOS\n-----\n')
+        # Dict of edges
+        cols = ('de','para')
+        lista = []
         lista_conex = self.get_conexoes()
         for item in lista_conex:
-            de = item[0]
-            para = item[1]
-            ft.write(str(de)+','+str(para)+'\n')
-        ft.close()
+            lista.append(dict(zip(cols, item)))
+
+        # Puts together nodes and edges and dumps all as json
+        grafodata = dict(labels=results, links=lista)
+        jsondata = simplejson.dumps(grafodata, use_decimal=True)
+        jg = open(self.file_out + '_grafo.json', 'w')
+        jg.write(jsondata)
+        jg.close()
+
 
     def drop_tables(self):
         cur = self.conn.cursor()
@@ -352,9 +364,9 @@ class Shp2Graph:
         #self.grf.plota_histograma()
         db.exporta_shapefile()
         db.export_geojson()
-        db.export_txt()
+        db.export_grafojson()
         self.compress_files(fnameout)
-        db.drop_tables()
+        #db.drop_tables()
         db.encerra_conexao()
 
     def realiza_calculos(self, db):
