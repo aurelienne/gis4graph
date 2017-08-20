@@ -51,13 +51,10 @@ def send_app(path):
 @app.route('/out/<path:path>')
 def send_out(path):
     pathjson = path
-    print(pathjson)
     if not os.path.exists(os.path.join('out', pathjson)):
         dir, file = os.path.split(pathjson)
         pid = dir
-        print(pid)
         filters = file.split('__')
-        print(filters)
         where = 'where '
         tag = ''
         for filter in filters[0:-1]:
@@ -80,12 +77,12 @@ def send_out(path):
                 continue
             where = where+tag+field+' between '+str(start)+' and '+str(end)
             tag = ' and '
-            print(where)
+        print(where)
 
         import converter as c
-        c.Database().export_geojson(where, pid, path[0:-5])
+        c.Database().export_geojson(where, pid, os.path.join('out', pathjson[0:-5]))
 
-    return send_from_directory('out/', path)
+    return send_from_directory('out/', pathjson)
 
 @app.route('/uid')
 def uid():
