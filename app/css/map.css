@@ -1,9 +1,25 @@
+svg {
+	width: 100%;
+	height: 100%;
+}
+
+
 .g4g-filter {
 	z-index: 10000;
 	background-color: #FFFFFF;
 	color: #000000;
 	position: fixed;
  	top:  100px;
+ 	left: 5px;
+	padding: 2px;
+}
+
+.g4g-grafo{
+	z-index: 10000;
+	background-color: #FFFFFF;
+	color: #000000;
+	position: fixed;
+ 	top:  140px;
  	left: 5px;
 	padding: 2px;
 }

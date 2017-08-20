@@ -2,6 +2,69 @@ app.controller('HomeController', function($scope, $http) {
 
 });
 
+app.controller('GraphController', function($scope, $http, $routeParams ) {
+	var graph = Viva.Graph.graph();
+	
+
+	var graphics = Viva.Graph.View.svgGraphics();
+
+	// This function let us override default node appearance and create
+	// something better than blue dots:
+	graphics.node(function(node) {
+		// node.data holds custom object passed to graph.addNode():
+		var url = 'images/' + node.data.img;
+		var tam = (node.data.ocorrencias) * 1;
+		if (tam > 200)
+			tam = 200;
+		var ui = Viva.Graph.svg('image').attr('width', 20 + tam).attr('height', 20 + tam).link(url);
+		/*
+		$(ui).click(function() {// mouse click
+			console.log(node);
+			alert(node.data.nome + ' (Grau: ' + node.data.grau + ') ');
+		});
+		*/
+		return ui;
+	});
+
+	
+
+	var url = '../out/'+$routeParams.id+'/';
+	if ($routeParams.filter != undefined) {
+		url += $routeParams.filter+'.json'; 
+	} else {
+		url += 'out_grafo.json'; 
+	}
+	
+	$http({
+		method : 'GET',
+		url : url
+	}).then(function successCallback(r) {
+		console.log(r);
+		for (i=0;i < r.data.labels.length; i++) {
+			node = r.data.labels[i];
+			graph.addNode(node.gid, {
+				id: node.gid,
+				nome:'Coef. Aglom: 0.33\nMenor Caminho Medio: 84.27\nBetweness: 7074.000000\nCloseness: 0.0119\nRio Jaguari (ID 3)',
+				img:'nofoto.jpg',
+				ocorrencias:0
+			});
+		};
+		
+		for (i=0;i < r.data.links.length; i++) {
+			l = r.data.links[i];
+			graph.addLink(l.de, l.para);
+		}
+		
+
+		renderer = Viva.Graph.View.renderer(graph, {
+			graphics : graphics
+		});
+		renderer.run();
+	}, function(r) {
+		console.log(r);
+	});
+});
+
 app.controller('MapController', function($scope, $http, $routeParams,$location, Notification) {
 
 	/*popup
@@ -322,8 +385,12 @@ app.controller('MapController', function($scope, $http, $routeParams,$location, 
 	};
 
 	/*
-	 * 
+	 *  END FILTER
 	 */
-	
+
+	$scope.showGrafo = function() {
+		$location.path( 'graph/'+$routeParams.id );
+		//window.location.redirect();
+	}
 
 });
