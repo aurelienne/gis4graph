@@ -1,5 +1,8 @@
-app.controller('HomeController', function($scope, $http) {
-
+app.controller('HomeController', function($scope, $http,$location) {
+	$scope.verExemplo =  function () {
+		console.log('aqui');
+		$location.path('/map/7f81065533104ae38ef2f8975de036f1');
+	};
 });
 
 app.controller('GraphController', function($scope, $http, $routeParams ) {
@@ -28,12 +31,20 @@ app.controller('GraphController', function($scope, $http, $routeParams ) {
 
 	
 
-	var url = '../out/'+$routeParams.id+'/';
+	var url = 'http://35.195.102.228/out/'+$routeParams.id+'/';
+	/*
+	if (is.browser()) {
+		var url = '../out/'+$routeParams.id+'/';
+	} else {
+		var url = 'http://35.195.102.228/out/'+$routeParams.id+'/';
+	}
+	*/
 	if ($routeParams.filter != undefined) {
 		url += $routeParams.filter+'.json'; 
 	} else {
 		url += 'out_grafo.json'; 
 	}
+	console.log(url);
 	
 	$http({
 		method : 'GET',
@@ -226,7 +237,9 @@ app.controller('MapController', function($scope, $http, $routeParams,$location, 
 		carregando : true,
 		legenda: true
 	};
-	var url = '../out/'+$routeParams.id+'/';
+	var url = 'http://35.195.102.228/out/'+$routeParams.id+'/';
+	//var url = '../out/'+$routeParams.id+'/';
+	//var url = '../out/'+$routeParams.id+'/';
 	if ($routeParams.filter != undefined) {
 		url += $routeParams.filter+'.json'; 
 	} else {
