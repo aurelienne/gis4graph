@@ -29,9 +29,8 @@ app.controller('GraphController', function($scope, $http, $routeParams ) {
 		return ui;
 	});
 
-	
 
-	var url = 'http://35.195.102.228/out/'+$routeParams.id+'/';
+	var url = '../out/'+$routeParams.id+'/';
 	/*
 	if (is.browser()) {
 		var url = '../out/'+$routeParams.id+'/';
@@ -237,9 +236,8 @@ app.controller('MapController', function($scope, $http, $routeParams,$location, 
 		carregando : true,
 		legenda: true
 	};
-	var url = 'http://35.195.102.228/out/'+$routeParams.id+'/';
-	//var url = '../out/'+$routeParams.id+'/';
-	//var url = '../out/'+$routeParams.id+'/';
+	//var url = 'http://35.195.102.228/out/'+$routeParams.id+'/';
+	var url = '../out/'+$routeParams.id+'/';
 	if ($routeParams.filter != undefined) {
 		url += $routeParams.filter+'.json'; 
 	} else {
