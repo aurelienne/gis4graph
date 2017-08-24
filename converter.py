@@ -223,9 +223,7 @@ class Database:
         cur = self.conn.cursor()
         cur.execute('select gid, st_asgeojson(geom) from s2g_nodes_'+pid+' '+where+' order by gid')
         gjson = '{ "type": "FeatureCollection", "features": [ '
-        print(cur)
         for result in cur:
-            print(result)
             gid = result[0]
             prop_json = self.export_prop_json(gid, pid)
             gjson = gjson+'{ "type": "Feature", "geometry": ' + result[1] + ', "properties": '+prop_json+'},'
@@ -342,11 +340,13 @@ class Grafo:
         fig.savefig(os.path.join(fnameout+'_hist.png'))
 
     def centralidade(self, db):
-        for i in range(0, self.grafo.vcount()):
-            db.update_betweeness(i+1, self.grafo.betweenness(vertices=i))
+        lista_bet = self.grafo.betweenness()
+        for i in range(0, len(lista_bet)):
+            db.update_betweeness(i+1, lista_bet[i])
         db.conn.commit()
-        for i in range(0, self.grafo.vcount()):
-            db.update_closeness(i+1, self.grafo.closeness(vertices=i))
+        lista_cls = self.grafo.closeness()
+        for i in range(0, len(lista_cls)):
+            db.update_closeness(i+1, lista_cls[i])
         db.conn.commit()
 
 
