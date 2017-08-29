@@ -13,14 +13,27 @@ def upload_file():
     if request.method == 'POST':
         os.makedirs(dir)
         f1 = request.files['dbf']
+        if secure_filename(f1.filename).split('.')[-1] != 'dbf':
+            return redirect("/app/#/home/" + "Arquivo DBF incorreto. Informar novamente!", code=302)
         f1.save(dir+'/'+secure_filename(f1.filename))
+
         f2 = request.files['prj']
+        if secure_filename(f2.filename).split('.')[-1] != 'prj':
+            return redirect("/app/#/home/" + "Arquivo PRJ incorreto. Informar novamente!", code=302)
         f2.save(dir+'/'+secure_filename(f2.filename))
+
         f3 = request.files['shp']
+        if secure_filename(f3.filename).split('.')[-1] != 'shp':
+            return redirect("/app/#/home/" + "Arquivo SHP incorreto. Informar novamente!", code=302)
         f3.save(dir+'/'+secure_filename(f3.filename))
+
         f4 = request.files['shx']
+        if secure_filename(f4.filename).split('.')[-1] != 'shx':
+            return redirect("/app/#/home/" + "Arquivo SHX incorreto. Informar novamente!", code=302)
         f4.save(dir+'/'+secure_filename(f4.filename))
+
         return redirect("/converter/"+dir+'/'+secure_filename(f3.filename), code=302)
+
     if request.method == 'GET':
         return 'GET'
 

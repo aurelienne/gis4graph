@@ -30,9 +30,9 @@ app.controller('GraphController', function($scope, $http, $routeParams ) {
 		return ui;
 	});
 
-	
 
 	var url = '../out/'+$routeParams.id+'/';
+
 	if ($routeParams.filter != undefined) {
 		url += $routeParams.filter+'.json'; 
 	} else {
@@ -230,6 +230,10 @@ app.controller('MapController', function($scope, $http, $routeParams,$location, 
 		carregando : true,
 		legenda: true
 	};
+<<<<<<< HEAD
+=======
+	//var url = 'http://35.195.102.228/out/'+$routeParams.id+'/';
+>>>>>>> 793b179f9ba27957089edd11b992b02fec6f730b
 	var url = '../out/'+$routeParams.id+'/';
 	if ($routeParams.filter != undefined) {
 		url += $routeParams.filter+'.json'; 
