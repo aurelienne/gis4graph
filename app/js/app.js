@@ -5,6 +5,9 @@ app.config(function($routeProvider, $locationProvider, $sceDelegateProvider) {
 	$routeProvider.when('/home', {
 		templateUrl : 'view/home.html',
 		controller : 'HomeController',
+	}).when('/home/:msg', {
+		templateUrl : 'view/home.html',
+		controller : 'HomeController',
 
 	}).when('/map/:id', {
 		templateUrl : 'view/map.html',

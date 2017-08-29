@@ -1,7 +1,8 @@
 <div class="container">
-			<button ng-click="verExemplo()">Ver Exemplo</button>
-<hr>
 <h1><img src="images/logo.png">GIS4Graph</h1>
+<div ng-show='msg' class="alert alert-danger">
+	{{msg}}	
+</div>
 
 <form  enctype="multipart/form-data" action="/uploader" method="POST">
 	<div class="form-group">
