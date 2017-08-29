@@ -437,7 +437,7 @@ class Shp2Graph:
         print("> Grau calculado - "+str(datetime.datetime.now()))
         self.grf.calcula_coef(db)
         print("> Coef. Aglom. calculado - "+str(datetime.datetime.now()))
-        #self.grf.menor_caminho_medio(db)
+        self.grf.menor_caminho_medio(db)
         print("> Menor Caminho Médio calculado - "+str(datetime.datetime.now()))
         self.grf.centralidade(db)
         print("> Closeness e betweeness calculados - "+str(datetime.datetime.now()))
