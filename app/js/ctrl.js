@@ -17,7 +17,10 @@ app.controller('GraphController', function($scope, $http, $routeParams ) {
 	graphics.node(function(node) {
 		// node.data holds custom object passed to graph.addNode():
 		var url = 'images/' + node.data.img;
-		var tam = (node.data.ocorrencias) * 1;
+		//console.log(node);
+		var tam = 0;
+		if (is.number(node.data.obj.mencamed))
+			tam = (node.data.obj.mencamed) * 1;
 		if (tam > 200)
 			tam = 200;
 		var ui = Viva.Graph.svg('image').attr('width', 20 + tam).attr('height', 20 + tam).link(url);
@@ -46,11 +49,12 @@ app.controller('GraphController', function($scope, $http, $routeParams ) {
 		console.log(r);
 		for (i=0;i < r.data.labels.length; i++) {
 			node = r.data.labels[i];
+			console.log(node);
 			graph.addNode(node.gid, {
 				id: node.gid,
 				nome:'Coef. Aglom: 0.33\nMenor Caminho Medio: 84.27\nBetweness: 7074.000000\nCloseness: 0.0119\nRio Jaguari (ID 3)',
 				img:'nofoto.jpg',
-				ocorrencias:0
+				obj:node
 			});
 		};
 		
@@ -212,6 +216,8 @@ app.controller('MapController', function($scope, $http, $routeParams,$location, 
 		"#0000FF",
  		"#483D8B",
 	];
+	
+	$scope.coresGrau = [];
 				
 	$scope.limites = {
 		coef_aglom:{max:0,min:0},
@@ -230,10 +236,7 @@ app.controller('MapController', function($scope, $http, $routeParams,$location, 
 		carregando : true,
 		legenda: true
 	};
-<<<<<<< HEAD
-=======
-	//var url = 'http://35.195.102.228/out/'+$routeParams.id+'/';
->>>>>>> 793b179f9ba27957089edd11b992b02fec6f730b
+
 	var url = '../out/'+$routeParams.id+'/';
 	if ($routeParams.filter != undefined) {
 		url += $routeParams.filter+'.json'; 
@@ -285,6 +288,9 @@ app.controller('MapController', function($scope, $http, $routeParams,$location, 
 			if (data.features[i].properties.grau < $scope.limites.grau.min)
 				$scope.limites.grau.min = data.features[i].properties.grau;  
 
+			$scope.coresGrau[data.features[i].properties.grau] = '#000000';
+				
+
 			if (data.features[i].properties.betweeness > $scope.limites.betweeness.max)
 				$scope.limites.betweeness.max = data.features[i].properties.betweeness;  
 			if (data.features[i].properties.betweeness < $scope.limites.betweeness.min)
@@ -318,6 +324,7 @@ app.controller('MapController', function($scope, $http, $routeParams,$location, 
 				
 
 		}
+		console.log($scope.coresGrau);
 		//console.log($scope.limites);
 		$scope.obj = data;
 		addLayer();
