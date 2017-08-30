@@ -117,7 +117,7 @@ class Database:
         cur = self.conn.cursor()
 
         cur.execute('insert into '+self.conex_table+' (de,para) '+
-                    'select a.gid, b.gid from g4g_nodes_002 a, g4g_nodes_002 b '+
+                    'select a.gid, b.gid from '+self.nodes_table+' a, '+self.nodes_table+' b '+
                     'where st_intersects(a.geom, b.geom) and b.gid > a.gid')
 
         cur_de.close()
@@ -128,7 +128,7 @@ class Database:
         cur = self.conn.cursor()
         cur.execute('insert into '+self.conex_table + '  (de,para) ' +
                     'select distinct g1.gid, g2.gid \
-                    from ways_002 w1, ways_002 w2, ' + self.nodes_table + ' as g1, ' + self.nodes_table + ' as g2 ' +
+                    from ways_'+self.pid+' w1, ways_'+self.pid+' w2, ' + self.nodes_table + ' as g1, ' + self.nodes_table + ' as g2 ' +
                     'where g1.osm_id = w1.osm_id \
                     and g2.osm_id = w2.osm_id \
                     and w1.osm_id <> w2.osm_id \
@@ -136,7 +136,7 @@ class Database:
                     and w2.one_way = 1 \
                     UNION \
                     select distinct g1.gid, g2.gid \
-                    from ways_002 w1, ways_002 w2, ' + self.nodes_table + ' as g1, ' + self.nodes_table + ' as g2 ' +
+                    from ways_'+self.pid+' w1, ways_'+self.pid+' w2, ' + self.nodes_table + ' as g1, ' + self.nodes_table + ' as g2 ' +
                     'where g1.osm_id = w1.osm_id \
                     and g2.osm_id = w2.osm_id \
                     and w1.osm_id <> w2.osm_id \
