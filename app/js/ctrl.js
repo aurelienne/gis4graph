@@ -17,7 +17,10 @@ app.controller('GraphController', function($scope, $http, $routeParams ) {
 	graphics.node(function(node) {
 		// node.data holds custom object passed to graph.addNode():
 		var url = 'images/' + node.data.img;
-		var tam = (node.data.ocorrencias) * 1;
+		//console.log(node);
+		var tam = 0;
+		if (is.number(node.data.obj.mencamed))
+			tam = (node.data.obj.mencamed) * 1;
 		if (tam > 200)
 			tam = 200;
 		var ui = Viva.Graph.svg('image').attr('width', 20 + tam).attr('height', 20 + tam).link(url);
@@ -46,11 +49,12 @@ app.controller('GraphController', function($scope, $http, $routeParams ) {
 		console.log(r);
 		for (i=0;i < r.data.labels.length; i++) {
 			node = r.data.labels[i];
+			console.log(node);
 			graph.addNode(node.gid, {
 				id: node.gid,
 				nome:'Coef. Aglom: 0.33\nMenor Caminho Medio: 84.27\nBetweness: 7074.000000\nCloseness: 0.0119\nRio Jaguari (ID 3)',
 				img:'nofoto.jpg',
-				ocorrencias:0
+				obj:node
 			});
 		};
 		
@@ -201,17 +205,56 @@ app.controller('MapController', function($scope, $http, $routeParams,$location, 
 		console.log('aqui');
 		var position = e.map.getLonLatFromViewPortPx(e.xy);
 		OpenLayers.Util.getElement("tooltip").innerHTML = "<label>Latitude: " + position.lat + "</label><br/><label>Longitude: " + position.lon + "</label>";
-	}); 
+	});
+	
+	$scope.corPadrao = '#AAAAAA';
+	$scope.cores = [];
 
-	$scope.cores = [
-		"#777777", 
-		"#FFFF00",
-		"#FFA500", 
-		"#7CFC00", 
-		"#00FFFF", 
-		"#0000FF",
- 		"#483D8B",
+	$scope.coresT = [
+		"#00ffff",
+		"#f0ffff",
+		"#000000",
+		"#0000ff",
+		"#a52a2a",
+		"#00008b",
+		"#008b8b",
+		"#a9a9a9",
+		"#006400",
+		"#bdb76b",
+		"#8b008b",
+		"#556b2f",
+		"#ff8c00",
+		"#9932cc",
+		"#8b0000",
+		"#e9967a",
+		"#9400d3",
+		"#ff00ff",
+		"#ffd700",
+		"#008000",
+		"#4b0082",
+		"#f0e68c",
+		"#add8e6",
+		"#e0ffff",
+		"#90ee90",
+		"#d3d3d3",
+		"#ffb6c1",
+		"#ffffe0",
+		"#00ff00",
+		"#ff00ff",
+		"#800000",
+		"#000080",
+		"#808000",
+		"#ffa500",
+		"#ffc0cb",
+		"#800080",
+		"#800080",
+		"#ff0000",
+		"#c0c0c0",
+		"#ffffff",
+		"#ffff00"
 	];
+	
+	$scope.coresGrau = [];
 				
 	$scope.limites = {
 		coef_aglom:{max:0,min:0},
@@ -230,10 +273,7 @@ app.controller('MapController', function($scope, $http, $routeParams,$location, 
 		carregando : true,
 		legenda: true
 	};
-<<<<<<< HEAD
-=======
-	//var url = 'http://35.195.102.228/out/'+$routeParams.id+'/';
->>>>>>> 793b179f9ba27957089edd11b992b02fec6f730b
+
 	var url = '../out/'+$routeParams.id+'/';
 	if ($routeParams.filter != undefined) {
 		url += $routeParams.filter+'.json'; 
@@ -285,6 +325,9 @@ app.controller('MapController', function($scope, $http, $routeParams,$location, 
 			if (data.features[i].properties.grau < $scope.limites.grau.min)
 				$scope.limites.grau.min = data.features[i].properties.grau;  
 
+			$scope.coresGrau[data.features[i].properties.grau] = $scope.corPadrao;
+				
+
 			if (data.features[i].properties.betweeness > $scope.limites.betweeness.max)
 				$scope.limites.betweeness.max = data.features[i].properties.betweeness;  
 			if (data.features[i].properties.betweeness < $scope.limites.betweeness.min)
@@ -315,10 +358,26 @@ app.controller('MapController', function($scope, $http, $routeParams,$location, 
 				$scope.limites.strahler.max = data.features[i].properties.strahler;  
 			if (data.features[i].properties.strahler < $scope.limites.strahler.min)
 				$scope.limites.strahler.min = data.features[i].properties.strahler;  
-				
-
 		}
-		//console.log($scope.limites);
+		//console.log($scope.coresGrau);
+		iCor = 0;
+		for (i=$scope.coresGrau.length - 1; i >= 0;i--) {
+			if ($scope.coresGrau[i] === $scope.corPadrao) {
+				console.log($scope.coresGrau[i]);
+				if ($scope.coresT[iCor] != undefined) {
+					$scope.cores[i] = {cor: $scope.coresT[iCor],i:i,iCor:iCor};
+					iCor++;
+				} else {
+					$scope.cores[i] = {cor: "#000000",i:i,iCor:0};
+				}
+			} else {
+				$scope.cores[i] = {cor: false,i:i,iCor:0};
+			}
+				
+		}
+		//$scope.cores.reverse();
+		console.log($scope.cores);
+
 		$scope.obj = data;
 		addLayer();
 		
@@ -329,7 +388,7 @@ app.controller('MapController', function($scope, $http, $routeParams,$location, 
 			
 
 	function styleFunction(f) {
-		cor = $scope.cores[f.R.grau];
+		cor = $scope.cores[f.R.grau].cor;
 		
 		var st = new ol.style.Style({
 			stroke : new ol.style.Stroke({
@@ -399,6 +458,13 @@ app.controller('MapController', function($scope, $http, $routeParams,$location, 
 	$scope.showGrafo = function() {
 		$location.path( 'graph/'+$routeParams.id );
 		//window.location.redirect();
-	}
+	};
 
+});
+
+
+app.filter('reverse', function() {
+  return function(items) {
+    return items.slice().reverse();
+  };
 });
