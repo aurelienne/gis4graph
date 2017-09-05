@@ -1,27 +1,54 @@
+.gBtn {
+	margin: 1px;
+	color: #fff;
+	background-color: rgba(0,60,136,0.5);
+	font-size: 1.14em;
+	font-weight: 700;
+	border:none;
+	border-radius: 2px;
+	width: 1.37em;
+	padding: 0;
+}
+
+.gBtn:hover {
+	background-color: rgba(0,60,136,0.7);
+}
+
+#divGraph {
+	z-index: 10000;
+	background-color: #F3F3F3;
+	color: #000000;
+	position: fixed;
+	top: 0;
+	left: 0;
+	padding: 5px;
+}
+
 svg {
 	width: 100%;
 	height: 100%;
 }
-
 
 .g4g-filter {
 	z-index: 10000;
 	background-color: #FFFFFF;
 	color: #000000;
 	position: fixed;
- 	top:  100px;
- 	left: 5px;
-	padding: 2px;
+	top: 100px;
+	left: 5px;
+	padding: 1px;
+	opacity: 0.95;
 }
 
-.g4g-grafo{
-	z-index: 10000;
+.g4g-grafo {
+	z-index: 9999;
 	background-color: #FFFFFF;
 	color: #000000;
 	position: fixed;
- 	top:  140px;
- 	left: 5px;
-	padding: 2px;
+	top: 140px;
+	left: 5px;
+	padding: 1px;
+	opacity: 0.95;
 }
 
 
@@ -40,10 +67,9 @@ svg {
 	background-color: #C3C3C3;
 	color: #000000;
 	position: fixed;
- 	bottom: 15px;
- 	right: 0;
+	bottom: 15px;
+	right: 0;
 	padding: 5px;
-	
 }
 .labelLegenda table {
 	min-width: 60px;
@@ -52,7 +78,6 @@ svg {
 	text-align: center;
 	padding: 2px;
 	font-size: 0.8em;
-
 }
 
 .labelPosition {
@@ -63,7 +88,7 @@ svg {
 	padding: 5px;
 	left: 0;
 	bottom: 0;
-	font-size: 0.8em;	
+	font-size: 0.8em;
 }
 .labelPosition label {
 	text-decoration: none;

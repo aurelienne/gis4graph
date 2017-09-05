@@ -10,17 +10,15 @@ app.config(function($routeProvider, $locationProvider, $sceDelegateProvider) {
 		controller : 'HomeController',
 
 	}).when('/map/:id', {
-		templateUrl : 'view/map.html',
+		templateUrl : 'view/map001.html',
 		controller : 'MapController',
 	}).when('/map/:id/:filter', {
-		templateUrl : 'view/map.html',
+		templateUrl : 'view/map001.html',
 		controller : 'MapController',
 
-	}).when('/graph/:id', {
-		templateUrl : 'view/graph.html',
-		controller : 'GraphController',
-	}).when('/graph/:id/:filter', {
-		templateUrl : 'view/graph.html',
+	}).when('/graph/:id/:field/:min/:max', {
+		cache: false,
+		templateUrl : 'view/graph001.html',
 		controller : 'GraphController',
 
 	}).otherwise({

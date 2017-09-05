@@ -6,32 +6,102 @@ app.controller('HomeController', function($scope, $http,$routeParams) {
 
 });
 
-app.controller('GraphController', function($scope, $http, $routeParams ) {
-	var graph = Viva.Graph.graph();
+app.controller('GraphController', function($scope, $http, $routeParams, $location, $route ) {
 	
-
+	var graph = Viva.Graph.graph();
+	var container = document.body;
+	var labels = [];
+	
+	$scope.print = 0;
 	var graphics = Viva.Graph.View.svgGraphics();
-
+	var svgText = Viva.Graph.svg('text').attr('y', '-4px').attr('x',
+						'4px').text('teste');
+						
+	$scope.showProp = {
+		show: false,
+		ok: function() {
+			$scope.showProp.show = false;
+		},
+		node: {}
+	};
+	
+	
+	var sizes = [];		
+	sizes[0] = ($routeParams.max -$routeParams.min) / 4;
+	sizes[1] = ($routeParams.max -$routeParams.min) / 4 * 2;
+	sizes[2] = ($routeParams.max -$routeParams.min) / 4 * 3;
+	sizes[3] = ($routeParams.max -$routeParams.min);
+	campoTam = $routeParams.field;
+	
+	//console.log(svgText);
 	// This function let us override default node appearance and create
 	// something better than blue dots:
 	graphics.node(function(node) {
 		// node.data holds custom object passed to graph.addNode():
-		var url = 'images/' + node.data.img;
-		//console.log(node);
-		var tam = 0;
-		if (is.number(node.data.obj.mencamed))
-			tam = (node.data.obj.mencamed) * 1;
-		if (tam > 200)
-			tam = 200;
-		var ui = Viva.Graph.svg('image').attr('width', 20 + tam).attr('height', 20 + tam).link(url);
-		/*
+		//console.log(node.data.obj[campoTam],campoTam);
+		if (campoTam == 'mencamed') {
+			if (node.data.obj[campoTam] <= sizes[0]) {
+				var url = 'images/vermelho2.png';
+			} else if (node.data.obj[campoTam] <= sizes[1]) {
+				var url = 'images/vermelho.png';
+			} else if (node.data.obj[campoTam] <= sizes[2]) {
+				var url = 'images/verde.png';
+			} else  {
+				var url = 'images/no_foto2.png';
+			}
+			var tam = 100 - (node.data.obj[campoTam] * 100 / $routeParams.max );
+			if (tam < 0) tam = 1;
+			 
+		} else {
+			if (node.data.obj[campoTam] <= sizes[0]) {
+				var url = 'images/no_foto2.png';
+			} else if (node.data.obj[campoTam] <= sizes[1]) {
+				var url = 'images/verde.png';
+			} else if (node.data.obj[campoTam] <= sizes[2]) {
+				var url = 'images/vermelho.png';
+			} else  {
+				var url = 'images/vermelho2.png';
+			}
+			var tam =  (node.data.obj[campoTam] * 100 / $routeParams.max );
+			if (tam < 0) tam = 1; 
+		}
+
+
+		
+		
+		if ($scope.print < 0) {
+			/*
+			var ui =  Viva.Graph.svg('svg');
+			
+			
+			var img =  Viva.Graph.svg('image').attr('width',
+							20 +tam).attr('height', 20 +tam).link(url);
+			//ui.append(img);							
+
+			var txt = Viva.Graph.svg('text').attr('y', '-4px').attr('x','-4px').text('teste');								
+			ui.append(txt);
+			var ui =  Viva.Graph.svg('svg');
+			var ui = Viva.Graph.svg('text').attr('y', '-4px').attr('x','-4px').text('teste');
+			//ui.appendChild(txt);
+			console.log(ui);
+			$scope.print++;
+			*/
+		} else {
+			var ui = Viva.Graph.svg('image').attr('width', 20 + tam).attr('height', 20 + tam).link(url);
+		}
+		
+
+		
 		$(ui).click(function() {// mouse click
-			console.log(node);
-			alert(node.data.nome + ' (Grau: ' + node.data.grau + ') ');
+			$scope.showProp.show = true;
+			$scope.showProp.node = node.data.obj;
+			//console.log(node);
+			$scope.$apply();
 		});
-		*/
+		
 		return ui;
-	});
+
+	}); 
 
 
 	var url = '../out/'+$routeParams.id+'/';
@@ -46,16 +116,17 @@ app.controller('GraphController', function($scope, $http, $routeParams ) {
 		method : 'GET',
 		url : url
 	}).then(function successCallback(r) {
-		console.log(r);
+
 		for (i=0;i < r.data.labels.length; i++) {
 			node = r.data.labels[i];
-			console.log(node);
+			
 			graph.addNode(node.gid, {
 				id: node.gid,
-				nome:'Coef. Aglom: 0.33\nMenor Caminho Medio: 84.27\nBetweness: 7074.000000\nCloseness: 0.0119\nRio Jaguari (ID 3)',
-				img:'nofoto.jpg',
+				nome: JSON.stringify(node),
+				img:'no_foto2.png',
 				obj:node
 			});
+
 		};
 		
 		for (i=0;i < r.data.links.length; i++) {
@@ -67,6 +138,7 @@ app.controller('GraphController', function($scope, $http, $routeParams ) {
 		renderer = Viva.Graph.View.renderer(graph, {
 			graphics : graphics
 		});
+		renderer.rerender();
 		renderer.run();
 	}, function(r) {
 		console.log(r);
@@ -212,13 +284,8 @@ app.controller('MapController', function($scope, $http, $routeParams,$location, 
 
 	$scope.coresT = [
 		"#00ffff",
-		"#f0ffff",
-		"#000000",
-		"#0000ff",
 		"#a52a2a",
 		"#00008b",
-		"#008b8b",
-		"#a9a9a9",
 		"#006400",
 		"#bdb76b",
 		"#8b008b",
@@ -232,6 +299,7 @@ app.controller('MapController', function($scope, $http, $routeParams,$location, 
 		"#ffd700",
 		"#008000",
 		"#4b0082",
+		"#008b8b",
 		"#f0e68c",
 		"#add8e6",
 		"#e0ffff",
@@ -247,11 +315,15 @@ app.controller('MapController', function($scope, $http, $routeParams,$location, 
 		"#ffa500",
 		"#ffc0cb",
 		"#800080",
-		"#800080",
 		"#ff0000",
 		"#c0c0c0",
+		"#a9a9a9",
 		"#ffffff",
-		"#ffff00"
+		"#ffff00",
+		"#f0ffff",
+		"#0000ff",
+		"#000000",
+		
 	];
 	
 	$scope.coresGrau = [];
@@ -363,7 +435,7 @@ app.controller('MapController', function($scope, $http, $routeParams,$location, 
 		iCor = 0;
 		for (i=$scope.coresGrau.length - 1; i >= 0;i--) {
 			if ($scope.coresGrau[i] === $scope.corPadrao) {
-				console.log($scope.coresGrau[i]);
+				//console.log($scope.coresGrau[i]);
 				if ($scope.coresT[iCor] != undefined) {
 					$scope.cores[i] = {cor: $scope.coresT[iCor],i:i,iCor:iCor};
 					iCor++;
@@ -376,7 +448,7 @@ app.controller('MapController', function($scope, $http, $routeParams,$location, 
 				
 		}
 		//$scope.cores.reverse();
-		console.log($scope.cores);
+		//console.log($scope.cores);
 
 		$scope.obj = data;
 		addLayer();
@@ -388,7 +460,13 @@ app.controller('MapController', function($scope, $http, $routeParams,$location, 
 			
 
 	function styleFunction(f) {
-		cor = $scope.cores[f.R.grau].cor;
+		if (is.null(f.R.grau)) {
+			//console.log(f);
+			cor = $scope.corPadrao;
+		} else {
+			cor = $scope.cores[f.R.grau].cor;
+		}
+		
 		
 		var st = new ol.style.Style({
 			stroke : new ol.style.Stroke({
@@ -455,10 +533,19 @@ app.controller('MapController', function($scope, $http, $routeParams,$location, 
 	 *  END FILTER
 	 */
 
-	$scope.showGrafo = function() {
-		$location.path( 'graph/'+$routeParams.id );
-		//window.location.redirect();
+	$scope.grafo = {
+		show: false,
+		showOptions: function() {
+			$scope.grafo.show = !$scope.grafo.show;
+		},
+		showGrafo : function(f) {
+			//window.location.assign ('#/graph/'+$routeParams.id+'/'+f+'/'+$scope.limites[f].min+'/' +$scope.limites[f].max);
+			//window.reload(); 
+			window.open( '#/graph/'+$routeParams.id+'/'+f+'/'+$scope.limites[f].min+'/' +$scope.limites[f].max,'_blank');
+		}
 	};
+	
+
 
 });
 

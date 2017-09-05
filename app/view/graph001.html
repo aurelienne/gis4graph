@@ -1,0 +1,17 @@
+<div id="divGraph" ng-show="showProp.show">
+	<table class="table">
+		<tr><td>Grau</td><td>{{showProp.node.grau}}</td></tr>
+		<tr><td>grau_in</td><td>{{showProp.node.grau_in}}</td></tr>
+		<tr><td>grau_out</td><td>{{showProp.node.grau_out}}</td></tr>
+		<tr><td>betweeness</td><td>{{showProp.node.betweeness}}</td></tr>
+		<tr><td>closeness</td><td>{{showProp.node.closeness}}</td></tr>
+		<tr><td>coef_aglom</td><td>{{showProp.node.coef_aglom}}</td></tr>
+		<tr><td>gid</td><td>{{showProp.node.gid}}</td></tr>
+		<tr><td>mencamed</td><td>{{showProp.node.mencamed}}</td></tr>
+	</table>
+	
+	<center>
+	<button class="btn btn-success" ng-click="showProp.ok()">OK</button>
+	</center>
+</div>
+

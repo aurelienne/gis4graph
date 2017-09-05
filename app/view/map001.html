@@ -10,7 +10,7 @@
 	</div>
 	
 	<div class="g4g-filter">
-		<button ng-click="filter.showFilter()" >F</button><span ng-show="filter.show"> Filtrar</span>
+		<button class="gBtn"  ng-click="filter.showFilter()" >F</button><span ng-show="filter.show"> Filtrar</span>
 		<div ng-show="filter.show">
 			<table class="table">
 				<tr><td>Coef. Aglo.</td>
@@ -45,7 +45,17 @@
 	</div>
 
 	<div class="g4g-grafo">
-		<button ng-click="showGrafo()" >G</button>
+		<button class="gBtn" ng-click="grafo.showOptions()" >G</button><span ng-show="grafo.show"> Opçoes de Visualização</span>
+		<div ng-show="grafo.show">
+			<hr>
+			<button class="btn" ng-click="grafo.showGrafo('coef_aglom')">Coef. Aglo.</button>
+			<button class="btn" ng-click="grafo.showGrafo('grau')">Grau</button>
+			<button class="btn" ng-click="grafo.showGrafo('mencamed')">Min Cam. Médio</button>
+			<hr>
+			<button class="btn" ng-click="grafo.showGrafo('betweeness')">betweeness</button>
+			<button class="btn" ng-click="grafo.showGrafo('closeness')">closeness</button>
+			</center>
+		</div>		
 	</div>
 	<div id="map" class="map"></div>
 	<div id="popup" class="ol-popup">
