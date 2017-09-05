@@ -4,7 +4,21 @@
 	{{msg}}	
 </div>
 
-<form  enctype="multipart/form-data" action="/uploader" method="POST">
+<button  ng-class="show=='shp' ? 'btn btn-danger' : 'btn'" ng-click="setShow('shp')">Shape File</button>
+<button  ng-class="show=='osm' ? 'btn btn-danger' : 'btn'" ng-click="setShow('osm')">OSM</button>
+<form ng-show="show=='osm'"  enctype="multipart/form-data" action="/uploaderOSM" method="POST">
+	<div class="form-group">
+		<label for="osm">OSM</label>
+		<input class="form-control" id="osm" name="osm" type="file" />
+		<Br>
+	</div>
+	<div class="form-group">
+		<input class="btn btn-success" type="submit" value="OK">
+	</div>
+	
+</form>
+
+<form ng-show="show=='shp'"  enctype="multipart/form-data" action="/uploader" method="POST">
 	<div class="form-group">
 		<label for="dbf">DBF</label>
 		<input class="form-control" id="dbf" name="dbf" type="file" />
@@ -30,5 +44,6 @@
 	</div>
 </form>
 
+<hr>
 <a href="http://35.195.102.228/app/#/map/exemplo">Exemplo</a>
 </div>

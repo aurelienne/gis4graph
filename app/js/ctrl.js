@@ -4,6 +4,10 @@ app.controller('HomeController', function($scope, $http,$routeParams) {
 	else
 		$scope.msg = false;
 
+	$scope.show = '';
+	$scope.setShow = function(show) {
+		$scope.show = show;
+	};
 });
 
 app.controller('GraphController', function($scope, $http, $routeParams, $location, $route ) {
