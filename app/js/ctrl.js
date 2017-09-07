@@ -115,11 +115,7 @@ app.controller('GraphController', function($scope, $http, $routeParams, $locatio
 	
 	
 	var sizes = [];		
-	sizes[0] = ($routeParams.max -$routeParams.min) / 4;
-	sizes[1] = ($routeParams.max -$routeParams.min) / 4 * 2;
-	sizes[2] = ($routeParams.max -$routeParams.min) / 4 * 3;
-	sizes[3] = ($routeParams.max -$routeParams.min);
-	campoTam = $routeParams.field;
+	var campoTam = $routeParams.field;
 	
 	
 	//console.log(svgText);
@@ -138,7 +134,7 @@ app.controller('GraphController', function($scope, $http, $routeParams, $locatio
 			} else  {
 				var url = 'images/no_foto2.png';
 			}
-			var tam = 100 - (node.data.obj[campoTam] * 100 / $routeParams.max );
+			var tam = 100 - (node.data.obj[campoTam] * 100 / $scope.max );
 			if (tam < 0) tam = 1;
 			 
 		} else {
@@ -151,13 +147,13 @@ app.controller('GraphController', function($scope, $http, $routeParams, $locatio
 			} else  {
 				var url = 'images/vermelho2.png';
 			}
-			var tam =  (node.data.obj[campoTam] * 100 / $routeParams.max );
+			var tam =  (node.data.obj[campoTam] * 100 / $scope.max );
 			if (tam < 0) tam = 1; 
 		}
 
 
-		
-		
+		//console.log(node.data.obj[campoTam]); return true;
+
 		var ui = Viva.Graph.svg('image').attr('width', 20 + tam).attr('height', 20 + tam).link(url);
 
 		
@@ -189,7 +185,10 @@ app.controller('GraphController', function($scope, $http, $routeParams, $locatio
 		for (i=0;i < r.data.labels.length; i++) {
 			if (i==0) {
 				$scope.showProp.moreFields = DataFactory.setExtendedData(r.data.labels[i]);
-			};
+				DataFactory.setFirstLimits(r.data.labels[i],false);
+			} else {
+				DataFactory.setLimits(r.data.labels[i],false);
+			}
 			
 			node = r.data.labels[i];
 			
@@ -201,7 +200,16 @@ app.controller('GraphController', function($scope, $http, $routeParams, $locatio
 			});
 
 		};
-		
+
+
+		$scope.allLimites = DataFactory.getAllLimits();
+		var max=$scope.allLimites[campoTam].max;
+		var min=$scope.allLimites[campoTam].min;
+		sizes[0] = (max - min) / 4;
+		sizes[1] = (max - min) / 4 * 2;
+		sizes[2] = (max - min) / 4 * 3;
+		sizes[3] = (max - min);
+		$scope.max = max;
 		for (i=0;i < r.data.links.length; i++) {
 			l = r.data.links[i];
 			graph.addLink(l.de, l.para);
@@ -431,6 +439,7 @@ app.controller('MapController', function($scope, $http, $routeParams,$location, 
 		data = r.data;
 		$scope.labels.carregando = false;
 		$scope.moreFields = DataFactory.setExtendedData(r.data.features[0].properties);
+		$scope.coresGrau[data.features[0].properties.grau] = $scope.corPadrao;
 		DataFactory.setFirstLimits(data.features[0].properties,$routeParams.filter != undefined);
 		
 
@@ -455,8 +464,8 @@ app.controller('MapController', function($scope, $http, $routeParams,$location, 
 			} else {
 				$scope.cores[i] = {cor: false,i:i,iCor:0};
 			}
-				
 		}
+		
 		//$scope.cores.reverse();
 		//console.log($scope.cores);
 
@@ -562,8 +571,9 @@ app.controller('MapController', function($scope, $http, $routeParams,$location, 
 		},
 		showGrafo : function(f) {
 			//window.location.assign ('#/graph/'+$routeParams.id+'/'+f+'/'+$scope.limites[f].min+'/' +$scope.limites[f].max);
-			//window.reload(); 
-			window.open( '#/graph/'+$routeParams.id+'/'+f+'/'+$scope.allLimites[f].min+'/' +$scope.allLimites[f].max,'_blank');
+			//window.reload();
+			//+'/'+$scope.allLimites[f].min+'/' +$scope.allLimites[f].max 
+			window.open( '#/graph/'+$routeParams.id+'/'+f,'_blank');
 		}
 	};
 	

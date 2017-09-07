@@ -16,7 +16,7 @@ app.config(function($routeProvider, $locationProvider, $sceDelegateProvider) {
 		templateUrl : 'view/map002.html',
 		controller : 'MapController',
 
-	}).when('/graph/:id/:field/:min/:max', {
+	}).when('/graph/:id/:field', {
 		cache: false,
 		templateUrl : 'view/graph001.html',
 		controller : 'GraphController',
