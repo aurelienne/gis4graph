@@ -1,3 +1,85 @@
+app.factory('DataFactory',function(){
+	var extendedData = [];
+	var g4gData = ['grau','grau_in','grau_out','betweeness','closeness','coef_aglom',
+		'mencamed','straight','vulnerab'
+	];
+	var g4gLabels = ['Grau','Grau In','Grau Out','Betweeness','Closeness','Coef. Aglom.',
+		'Min. Cam. Méd.','Straight','Vulnerab.'
+	];
+	var g4gSiglas = ['G','GI','GO','B','C','CA','MC','ST','VU'];
+	
+	var g4gAll = [];
+	for (var i=0;i<g4gData.length;i++) {
+		g4gAll.push({
+			"data":g4gData[i],
+			"label":g4gLabels[i],
+			"sigla":g4gSiglas[i]
+		});
+	}
+	//console.log(g4gAll);
+	
+	var limites = {};
+
+	var limitesAll = {};
+		
+	return {
+		getExtendedData: function() {
+			return  extendedData;
+		},
+		setExtendedData: function(obj) {
+			extendedData = [];
+			for (var key in obj) {
+				if (!(g4gData.indexOf(key)+1))
+					extendedData.push(key);
+			}
+			return extendedData;
+		},
+		
+		
+		setLimits: function(obj,filtered) {
+			for (var i=0;i<g4gData.length;i++) {
+				if (limites[g4gData[i]].max < obj[g4gData[i]])
+					limites[g4gData[i]].max = obj[g4gData[i]];
+				if (limites[g4gData[i]].min > obj[g4gData[i]])
+					limites[g4gData[i]].min = obj[g4gData[i]];
+
+			}
+			
+			if (!filtered) 
+				limitesAll = angular.copy(limites);
+		},
+		
+		
+		setFirstLimits:function(obj,filtered) {
+			for (var i=0;i<g4gData.length;i++) {
+				//console.log(obj);
+				limites[g4gData[i]] = {
+					max:0,min:0
+				};
+				
+				limites[g4gData[i]].max = obj[g4gData[i]];
+				limites[g4gData[i]].min = obj[g4gData[i]];
+			}
+			
+			if (!filtered) 
+				limitesAll = angular.copy(limites);
+
+		},
+		
+		
+		getLimits: function() {
+			return limites;
+		},
+		getAllLimits: function() {
+			return limitesAll;
+		},
+		
+		getAll: function() {
+			return g4gAll; 
+		}
+	};
+});
+
 app.controller('HomeController', function($scope, $http,$routeParams) {
 	if ($routeParams.msg)
 		$scope.msg = $routeParams.msg;
@@ -10,19 +92,21 @@ app.controller('HomeController', function($scope, $http,$routeParams) {
 	};
 });
 
-app.controller('GraphController', function($scope, $http, $routeParams, $location, $route ) {
+app.controller('GraphController', function($scope, $http, $routeParams, $location, $route , DataFactory) {
 	
 	var graph = Viva.Graph.graph();
 	var container = document.body;
 	var labels = [];
+	$scope.g4g = DataFactory.getAll();
 	
-	$scope.print = 0;
 	var graphics = Viva.Graph.View.svgGraphics();
 	var svgText = Viva.Graph.svg('text').attr('y', '-4px').attr('x',
 						'4px').text('teste');
 						
 	$scope.showProp = {
 		show: false,
+		showMore: false,
+		moreFields: [],
 		ok: function() {
 			$scope.showProp.show = false;
 		},
@@ -36,6 +120,7 @@ app.controller('GraphController', function($scope, $http, $routeParams, $locatio
 	sizes[2] = ($routeParams.max -$routeParams.min) / 4 * 3;
 	sizes[3] = ($routeParams.max -$routeParams.min);
 	campoTam = $routeParams.field;
+	
 	
 	//console.log(svgText);
 	// This function let us override default node appearance and create
@@ -73,27 +158,7 @@ app.controller('GraphController', function($scope, $http, $routeParams, $locatio
 
 		
 		
-		if ($scope.print < 0) {
-			/*
-			var ui =  Viva.Graph.svg('svg');
-			
-			
-			var img =  Viva.Graph.svg('image').attr('width',
-							20 +tam).attr('height', 20 +tam).link(url);
-			//ui.append(img);							
-
-			var txt = Viva.Graph.svg('text').attr('y', '-4px').attr('x','-4px').text('teste');								
-			ui.append(txt);
-			var ui =  Viva.Graph.svg('svg');
-			var ui = Viva.Graph.svg('text').attr('y', '-4px').attr('x','-4px').text('teste');
-			//ui.appendChild(txt);
-			console.log(ui);
-			$scope.print++;
-			*/
-		} else {
-			var ui = Viva.Graph.svg('image').attr('width', 20 + tam).attr('height', 20 + tam).link(url);
-		}
-		
+		var ui = Viva.Graph.svg('image').attr('width', 20 + tam).attr('height', 20 + tam).link(url);
 
 		
 		$(ui).click(function() {// mouse click
@@ -120,8 +185,12 @@ app.controller('GraphController', function($scope, $http, $routeParams, $locatio
 		method : 'GET',
 		url : url
 	}).then(function successCallback(r) {
-
+		//console.log(r);
 		for (i=0;i < r.data.labels.length; i++) {
+			if (i==0) {
+				$scope.showProp.moreFields = DataFactory.setExtendedData(r.data.labels[i]);
+			};
+			
 			node = r.data.labels[i];
 			
 			graph.addNode(node.gid, {
@@ -149,8 +218,10 @@ app.controller('GraphController', function($scope, $http, $routeParams, $locatio
 	});
 });
 
-app.controller('MapController', function($scope, $http, $routeParams,$location, Notification) {
+app.controller('MapController', function($scope, $http, $routeParams,$location, Notification,DataFactory) {
 
+	$scope.g4g = DataFactory.getAll();
+	
 	/*popup
 	* 
 	*/
@@ -265,8 +336,14 @@ app.controller('MapController', function($scope, $http, $routeParams,$location, 
 				'Betweeness: '+feature.get('betweeness')+'<br>'+
 				'Menor Cam. Médio: '+feature.get('mencamed')+'<br>'+
 				'Closeness: '+feature.get('closeness')+'<br>'+
-				'Strahler:'+feature.get('strahler')+'<br>'+
-				'Gid: '+feature.get('gid')+'<br>';
+				'Straight: '+feature.get('straight')+'<br>'+
+				'Vulnerab.: '+feature.get('vulnerab')+'<br>'+
+				'Strahler:'+feature.get('strahler')+'<br>';
+
+			for (var i=0;i<$scope.moreFields.length;i++) {
+				txt += $scope.moreFields[i]+': '+feature.get($scope.moreFields[i])+'<br>';
+			}
+							
 			
 			var coordinate = evt.coordinate;
 			var hdms = ol.coordinate.toStringHDMS(ol.proj.transform(coordinate, 'EPSG:3857', 'EPSG:4326'));
@@ -332,17 +409,7 @@ app.controller('MapController', function($scope, $http, $routeParams,$location, 
 	
 	$scope.coresGrau = [];
 				
-	$scope.limites = {
-		coef_aglom:{max:0,min:0},
-		grau:{max:0,min:0},
-		betweeness:{max:0,min:0},
-		mencamed:{max:0,min:0},
-		closeness:{max:0,min:0},
-		gid:{max:0,min:0},
-		strahler:{max:0,min:0}
-		
-	};
-	
+
 
 	
 	$scope.labels = {
@@ -361,80 +428,19 @@ app.controller('MapController', function($scope, $http, $routeParams,$location, 
 		method : 'GET',
 		url : url
 	}).then(function successCallback(r) {
-		$scope.labels.carregando = false;
 		data = r.data;
-		//console.log(data);
-		$scope.limites.coef_aglom.max = data.features[0].properties.coef_aglom;
-		$scope.limites.coef_aglom.min = data.features[0].properties.coef_aglom;
-
-		$scope.limites.grau.max = data.features[0].properties.grau;
-		$scope.limites.grau.min = data.features[0].properties.grau;
-
-		$scope.limites.betweeness.max = data.features[0].properties.betweeness;
-		$scope.limites.betweeness.min = data.features[0].properties.betweeness;
-
-		$scope.limites.mencamed.max = data.features[0].properties.mencamed;
-		$scope.limites.mencamed.min = data.features[0].properties.mencamed;
-
-		$scope.limites.closeness.max = data.features[0].properties.closeness;
-		$scope.limites.closeness.min = data.features[0].properties.closeness;
-
-		$scope.limites.gid.max = data.features[0].properties.gid;
-		$scope.limites.gid.min = data.features[0].properties.gid;
-
-		$scope.limites.strahler.max = data.features[0].properties.strahler;
-		$scope.limites.strahler.min = data.features[0].properties.strahler;
+		$scope.labels.carregando = false;
+		$scope.moreFields = DataFactory.setExtendedData(r.data.features[0].properties);
+		DataFactory.setFirstLimits(data.features[0].properties,$routeParams.filter != undefined);
+		
 
 		for (var i=1;i<data.features.length;i++) {
-			/*
-			if (data.features[i].properties.coef_aglom  == "") {
-				console.log(data.features[i] );
-			}
-			*/
-			if (data.features[i].properties.coef_aglom > $scope.limites.coef_aglom.max)
-				$scope.limites.coef_aglom.max = data.features[i].properties.coef_aglom;  
-			if (data.features[i].properties.coef_aglom < $scope.limites.coef_aglom.min)
-				$scope.limites.coef_aglom.min = data.features[i].properties.coef_aglom;  
-
-			if (data.features[i].properties.grau > $scope.limites.grau.max)
-				$scope.limites.grau.max = data.features[i].properties.grau;  
-			if (data.features[i].properties.grau < $scope.limites.grau.min)
-				$scope.limites.grau.min = data.features[i].properties.grau;  
-
+			DataFactory.setLimits(data.features[i].properties,$routeParams.filter != undefined);
 			$scope.coresGrau[data.features[i].properties.grau] = $scope.corPadrao;
-				
-
-			if (data.features[i].properties.betweeness > $scope.limites.betweeness.max)
-				$scope.limites.betweeness.max = data.features[i].properties.betweeness;  
-			if (data.features[i].properties.betweeness < $scope.limites.betweeness.min)
-				$scope.limites.betweeness.min = data.features[i].properties.betweeness;  
-
-
-			/*
-			if (data.features[i].properties.mencamed == Infinity)
-				data.features[i].properties.mencamed = 0;
-			*/
-			if (data.features[i].properties.mencamed > $scope.limites.mencamed.max)
-				$scope.limites.mencamed.max = parseFloat(data.features[i].properties.mencamed);  
-			if (data.features[i].properties.mencamed < $scope.limites.mencamed.min)
-				$scope.limites.mencamed.min = parseFloat( data.features[i].properties.mencamed);  
-
-			if (data.features[i].properties.closeness > $scope.limites.closeness.max)
-				$scope.limites.closeness.max = data.features[i].properties.closeness;  
-			if (data.features[i].properties.closeness < $scope.limites.closeness.min)
-				$scope.limites.closeness.min = data.features[i].properties.closeness;  
-
-			if (data.features[i].properties.gid > $scope.limites.gid.max)
-				$scope.limites.gid.max = data.features[i].properties.gid;  
-			if (data.features[i].properties.gid < $scope.limites.gid.min)
-				$scope.limites.gid.min = data.features[i].properties.gid;  
-				
-				
-			if (data.features[i].properties.strahler > $scope.limites.strahler.max)
-				$scope.limites.strahler.max = data.features[i].properties.strahler;  
-			if (data.features[i].properties.strahler < $scope.limites.strahler.min)
-				$scope.limites.strahler.min = data.features[i].properties.strahler;  
 		}
+		$scope.limites = DataFactory.getLimits();
+		$scope.allLimites = DataFactory.getAllLimits();
+		
 		//console.log($scope.coresGrau);
 		iCor = 0;
 		for (i=$scope.coresGrau.length - 1; i >= 0;i--) {
@@ -520,12 +526,24 @@ app.controller('MapController', function($scope, $http, $routeParams,$location, 
 			}
 		},
 		filtrar: function() {
+			var str = '';
+			var strDiv = '';
+			for (var i=0;i<$scope.g4g.length;i++) {
+				str += strDiv+$scope.g4g[i].sigla+
+					'_S'+$scope.limites[$scope.g4g[i].data].min+
+					'_E'+$scope.limites[$scope.g4g[i].data].max
+				;
+				strDiv = '__';
+			}
+			/*
+			console.log(str);
 			str = 'CA_S'+$scope.limites.coef_aglom.min+'_E'+$scope.limites.coef_aglom.max+'__'+
 				'G_S'+$scope.limites.grau.min+'_E'+$scope.limites.grau.max+'__'+
 				'B_S'+$scope.limites.betweeness.min+'_E'+$scope.limites.betweeness.max+'__'+
 				'MC_S'+$scope.limites.mencamed.min+'_E'+$scope.limites.mencamed.max+'__'+
 				'C_S'+$scope.limites.closeness.min+'_E'+$scope.limites.closeness.max+'__';
 			//console.log(str);
+			*/
 			$location.path('map/'+$routeParams.id+'/'+str);
 		},
 		original: function() {
@@ -545,7 +563,7 @@ app.controller('MapController', function($scope, $http, $routeParams,$location, 
 		showGrafo : function(f) {
 			//window.location.assign ('#/graph/'+$routeParams.id+'/'+f+'/'+$scope.limites[f].min+'/' +$scope.limites[f].max);
 			//window.reload(); 
-			window.open( '#/graph/'+$routeParams.id+'/'+f+'/'+$scope.limites[f].min+'/' +$scope.limites[f].max,'_blank');
+			window.open( '#/graph/'+$routeParams.id+'/'+f+'/'+$scope.allLimites[f].min+'/' +$scope.allLimites[f].max,'_blank');
 		}
 	};
 	

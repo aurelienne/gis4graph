@@ -1,0 +1,42 @@
+<div>
+	<div class="labelPosition"><b>GIS4Graph</b> | <label id="mouse-position"></label></div>
+	<div class="labelCarregando" ng-show="labels.carregando">Carregando</div>
+	<div class="labelLegenda"  ng-show="labels.legenda">
+		<table>
+			<tr ng-repeat="c in cores | reverse" ng-if="c.iCor < 6">
+				<td ng-show="c.cor != false" style="background: {{c.cor}}">Grau {{c.i}}</td>
+			</tr>
+		</table>
+	</div>
+	
+	<div class="g4g-filter">
+		<button class="gBtn"  ng-click="filter.showFilter()" >F</button><span ng-show="filter.show"> Filtrar</span>
+		<div ng-show="filter.show">
+			<table class="table">
+				<tr ng-repeat="g in g4g">
+					<td>{{g.label}}</td>
+					<td><input type="number" style="width: 100px" ng-model="limites[g.data].min"></td>
+					<td><input type="number" style="width: 100px" ng-model="limites[g.data].max"></td>
+				</tr>
+			</table>
+			<center>
+			<button class="btn" ng-click="filter.filtrar()">Aplicar Filtro</button>
+			<button class="btn" ng-click="filter.original()">Remover Filtro</button>
+			</center>
+		</div>
+	</div>
+
+	<div class="g4g-grafo">
+		<button class="gBtn" ng-click="grafo.showOptions()" >G</button><span ng-show="grafo.show"> Opçoes de Visualização</span>
+		<div ng-show="grafo.show" style="max-width: 250px; text-align: center">
+			<button ng-repeat="g in g4g" class="btn" style="margin: 5px;"
+				ng-click="grafo.showGrafo(g.data)">{{g.label}}
+			</button>
+		</div>		
+	</div>
+	<div id="map" class="map"></div>
+	<div id="popup" class="ol-popup">
+		<a href="#" id="popup-closer" class="ol-popup-closer"></a>
+		<div id="popup-content"></div>
+	</div>
+</div>

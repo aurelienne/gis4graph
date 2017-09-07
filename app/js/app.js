@@ -10,10 +10,10 @@ app.config(function($routeProvider, $locationProvider, $sceDelegateProvider) {
 		controller : 'HomeController',
 
 	}).when('/map/:id', {
-		templateUrl : 'view/map001.html',
+		templateUrl : 'view/map002.html',
 		controller : 'MapController',
 	}).when('/map/:id/:filter', {
-		templateUrl : 'view/map001.html',
+		templateUrl : 'view/map002.html',
 		controller : 'MapController',
 
 	}).when('/graph/:id/:field/:min/:max', {

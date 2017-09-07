@@ -1,16 +1,22 @@
-<div id="divGraph" ng-show="showProp.show">
+<div id="divGraph" ng-show="showProp.show" style=" overflow-y: scroll; overflow-x: hidden;
+max-height: 100%;">
 	<table class="table">
-		<tr><td>Grau</td><td>{{showProp.node.grau}}</td></tr>
-		<tr><td>grau_in</td><td>{{showProp.node.grau_in}}</td></tr>
-		<tr><td>grau_out</td><td>{{showProp.node.grau_out}}</td></tr>
-		<tr><td>betweeness</td><td>{{showProp.node.betweeness}}</td></tr>
-		<tr><td>closeness</td><td>{{showProp.node.closeness}}</td></tr>
-		<tr><td>coef_aglom</td><td>{{showProp.node.coef_aglom}}</td></tr>
-		<tr><td>gid</td><td>{{showProp.node.gid}}</td></tr>
-		<tr><td>mencamed</td><td>{{showProp.node.mencamed}}</td></tr>
+		<tr ng-repeat="g in g4g">
+			<td>{{g.label}}</td>
+			<td>{{showProp.node[g.data]}}</td>
+		</tr>
+		
+		<tr ng-repeat="k in showProp.moreFields" ng-show="showProp.showMore">
+			<td>{{k}}</td>
+			<td>{{showProp.node[k]}}</td>
+		</tr>
 	</table>
 	
 	<center>
+	<button class="btn btn-success" ng-click="showProp.showMore = !showProp.showMore">
+		<span ng-hide="showProp.showMore">Mais...</span>
+		<span ng-show="showProp.showMore">Menos...</span>
+	</button> 
 	<button class="btn btn-success" ng-click="showProp.ok()">OK</button>
 	</center>
 </div>
