@@ -4,6 +4,7 @@ Developed by Aurelienne Jorge (aurelienne@gmail.com)
 """
 
 import psycopg2
+from psycopg2.extras import RealDictCursor
 from igraph import *
 #import matplotlib as mpl
 #mpl.use('Agg')
@@ -17,6 +18,7 @@ import zipfile
 import subprocess
 import datetime
 
+
 config = configparser.ConfigParser()
 py_path = os.path.dirname(os.path.abspath(__file__))
 config.read_file(open(os.path.join(py_path,'defaults.cfg')))
@@ -25,7 +27,7 @@ userDB = config.get('DB','user')
 passDB = config.get('DB','pasw')
 nameDB = config.get('DB','name')
 portDB = config.get('DB','port')
-SRID = config.get('DB','srid')
+SRID = config.get('FILE','srid')
 
 class Database:
 
@@ -38,6 +40,7 @@ class Database:
         self.netwk_table = 'g4g_network_' + self.pid
         self.nodes_table = 'g4g_nodes_' + self.pid
         self.conex_table = 'g4g_relations_' + self.pid
+        self.cols = None
 
         if file_in != '':
             self.create_database()
@@ -75,17 +78,20 @@ class Database:
 
     def import_shapefile(self):
         os.environ['PGPASSWORD'] = passDB
-        os.system('shp2pgsql -s '+SRID+' -d -I -W "latin1" '+self.file_in+' public.'+self.nodes_table+' | psql -h '+hostDB+' -p '+portDB+' -d '+nameDB+' -U '+userDB+' -w')
+        #os.system('shp2pgsql -s '+SRID+' -d -I -W "latin1" '+self.file_in+' public.'+self.nodes_table+' | psql -h '+hostDB+' -p '+portDB+' -d '+nameDB+' -U '+userDB+' -w')
+        os.system('shp2pgsql -s ' + SRID + ' -d -I ' + self.file_in + ' public.' + self.nodes_table + ' | psql -h ' + hostDB + ' -p ' + portDB + ' -d ' + nameDB + ' -U ' + userDB + ' -w')
 
     def alter_nodes_table(self):
         cur = self.conn.cursor()
-        cur.execute('alter table '+self.nodes_table+' add column grau integer')
-        cur.execute('alter table '+self.nodes_table+' add column grau_in integer')
-        cur.execute('alter table '+self.nodes_table+' add column grau_out integer')
-        cur.execute('alter table '+self.nodes_table+' add column coef_aglom numeric(6,2)')
-        cur.execute('alter table '+self.nodes_table+' add column mencamed numeric(14,4)')
-        cur.execute('alter table '+self.nodes_table+' add column betweeness numeric(14,6)')
-        cur.execute('alter table '+self.nodes_table+' add column closeness numeric(6,4)')
+        cur.execute('alter table ' + self.nodes_table + ' add column grau integer')
+        cur.execute('alter table ' + self.nodes_table + ' add column grau_in integer')
+        cur.execute('alter table ' + self.nodes_table + ' add column grau_out integer')
+        cur.execute('alter table ' + self.nodes_table + ' add column coef_aglom numeric(6,2)')
+        cur.execute('alter table ' + self.nodes_table + ' add column mencamed numeric(14,4)')
+        cur.execute('alter table ' + self.nodes_table + ' add column betweeness numeric(14,6)')
+        cur.execute('alter table ' + self.nodes_table + ' add column closeness numeric(6,4)')
+        cur.execute('alter table ' + self.nodes_table + ' add column vulnerab numeric(8,6)')
+        cur.execute('alter table ' + self.nodes_table + ' add column straight numeric(8,6)')
         self.conn.commit()
         cur.close()
 
@@ -132,7 +138,7 @@ class Database:
                     'where g1.osm_id = w1.osm_id \
                     and g2.osm_id = w2.osm_id \
                     and w1.osm_id <> w2.osm_id \
-                    and w1.target = w2.source \
+                    and w1.target_osm = w2.source_osm \
                     and w2.one_way = 1 \
                     UNION \
                     select distinct g1.gid, g2.gid \
@@ -140,7 +146,7 @@ class Database:
                     'where g1.osm_id = w1.osm_id \
                     and g2.osm_id = w2.osm_id \
                     and w1.osm_id <> w2.osm_id \
-                    and (w1.target = w2.source or w1.target = w2.target) \
+                    and (w1.target_osm = w2.source_osm or w1.target_osm = w2.target_osm) \
                     and w2.one_way <> 1')
         self.conn.commit()
         cur.close()
@@ -161,6 +167,15 @@ class Database:
             lista_conexoes.append((de, para))
         cur.close()
         return lista_conexoes
+
+    def get_distance(self, source, target):
+        cur = self.conn.cursor()
+        cur.execute('select st_distance(st_transform(g1.geom,5880),st_transform(g2.geom,5880))/1000 '
+                    'from '+self.nodes_table+' as g1,'+
+                            self.nodes_table+' as g2 '
+                    'where g1.gid = %s and g2.gid = %s', (source, target))
+        dist = float(cur.fetchone()[0])
+        return dist
 
     def cria_tabela_geral(self):
         cur = self.conn.cursor()
@@ -245,6 +260,16 @@ class Database:
         cur.execute('update '+self.nodes_table+' set closeness = %s where gid = %s', (valor, id))
         cur.close()
 
+    def update_vulnerabilide(self, id, valor):
+        cur = self.conn.cursor()
+        cur.execute('update '+self.nodes_table+' set vulnerab = %s where gid = %s', (valor, id))
+        cur.close()
+
+    def update_straightness(self, id, valor):
+        cur = self.conn.cursor()
+        cur.execute('update '+self.nodes_table+' set straight = %s where gid = %s', (valor, id))
+        cur.close()
+
     def encerra_conexao(self):
         self.conn.close()
 
@@ -256,21 +281,23 @@ class Database:
         if pid == '':
             pid = self.pid
         cur = self.conn.cursor()
-        cols = ('gid', 'grau', 'grau_in', 'grau_out', 'coef_aglom', 'mencamed', 'betweeness', 'closeness')
-        results = []
-        cur.execute('select gid, grau, grau_in, grau_out, coef_aglom, mencamed, betweeness, closeness from '+self.nodes_table+
-                    ' where gid = %s', (gid,))
-        result = cur.fetchone()
-        results.append(dict(zip(cols, result)))
-        jsondata = simplejson.dumps(results, use_decimal=True)
+        cur2 = self.conn.cursor(cursor_factory=RealDictCursor)
+        cur.execute("SELECT array_to_string(ARRAY(SELECT c.column_name::text "
+                    "FROM information_schema.columns As c "
+                    "WHERE table_name = '"+self.nodes_table+"' "
+                    "AND c.column_name NOT IN('geom')), ',')")
+        self.cols = cur.fetchone()[0]
+        cur2.execute("select "+self.cols+" from "+self.nodes_table+" where gid = %s", (gid,))
+        jsondata = simplejson.dumps(cur2.fetchall(), use_decimal=True)
         jsondata = jsondata.replace('[', '')
         jsondata = jsondata.replace(']', '').replace('NaN', '""')
         cur.close()
+        cur2.close()
         return jsondata
 
     def export_geojson(self, where='', pid='', out=''):
-        if pid == '':
-            pid = self.pid
+        if pid != '':
+            self.nodes_table = self.nodes_table + pid
         cur = self.conn.cursor()
         cur.execute('select gid, st_asgeojson(geom) from '+self.nodes_table+' '+where+' order by gid')
         gjson = '{ "type": "FeatureCollection", "features": [ '
@@ -288,13 +315,9 @@ class Database:
 
     def export_grafojson(self):
         #Dict of nodes
-        cur = self.conn.cursor()
-        cur.execute('select gid, grau, grau_in, grau_out, coef_aglom, mencamed, betweeness, closeness from '+self.nodes_table+' order by gid')
-        cols = ('gid', 'grau', 'grau_in', 'grau_out', 'coef_aglom', 'mencamed', 'betweeness', 'closeness')
-        results = []
-        for result in cur:
-            results.append(dict(zip(cols, result)))
-        cur.close()
+        cur2 = self.conn.cursor(cursor_factory=RealDictCursor)
+        cur2.execute("select " + self.cols + " from " + self.nodes_table + " order by gid")
+        results = cur2.fetchall()
 
         # Dict of edges
         cols = ('de','para')
@@ -358,13 +381,13 @@ class Grafo:
         grauList = self.grafo.degree()
         grauInList = self.grafo.degree(mode=IN)
         grauOutList = self.grafo.degree(mode=OUT)
-        for i in range(self.grafo.vcount()):
+        for i in range(self.ordem):
             grau = grauList[i]
             grau_in = grauInList[i]
             grau_out = grauOutList[i]
-            db.update_grau_vertice(i, grau, grau_in, grau_out)
+            db.update_grau_vertice(i+1, grau, grau_in, grau_out)
         db.conn.commit()
-        self.grau_medio = sum(self.grafo.degree()) / self.grafo.vcount()
+        self.grau_medio = sum(self.grafo.degree()) / self.ordem
         db.update_grau_medio(self.grau_medio)
 
     def calcula_coef(self, db):
@@ -377,7 +400,7 @@ class Grafo:
         db.update_coef_aglom_medio(self.coef_aglom_medio)
 
     def menor_caminho_medio(self, db):
-        for i in range(0, self.grafo.vcount()):
+        for i in range(0, self.ordem):
             mencam = self.grafo.shortest_paths_dijkstra(source=i)[0]
             caminhoMed = mean(mencam[x] for x in range(len(mencam)) if (mencam[x]!=float('Inf'))and(mencam[x]!=0))
             db.update_menor_caminho_medio(i+1, caminhoMed)
@@ -405,6 +428,48 @@ class Grafo:
             db.update_closeness(i+1, lista_cls[i])
         db.conn.commit()
 
+    def eficiencia_global(self, g):
+        print(datetime.datetime.now())
+        sumMC = 0
+        lenMC = 0
+        for i in range(0, g.vcount()-1):
+            mencam = g.shortest_paths_dijkstra(source=i)[0]
+            invMencam = [1.0/x for x in mencam if (x!=float('Inf'))and(x!=0)]
+            sumMC = sumMC + sum(invMencam)
+            lenMC = lenMC + len(invMencam)
+
+        eg = sumMC/lenMC
+        print(datetime.datetime.now())
+        return eg
+
+    def vulnerabilidade(self, db):
+        # Eficiencia com o vertice
+        eg = self.eficiencia_global(self.grafo)
+        # Eficiencia sem o vertice
+        for i in range(0, self.ordem):
+            g = self.grafo.copy()
+            g.delete_vertices(i)
+            efi = self.eficiencia_global(g)
+            v = (eg-efi)/eg
+            db.update_vulnerabilide(i+1, v)
+        db.conn.commit()
+
+    def straightness(self, db):
+        for i in range(0, self.ordem):
+            mencam = self.grafo.shortest_paths_dijkstra(source=i)[0]
+            nvert = 0
+            sum = 0
+            for j in range(0, self.ordem):
+                if mencam[j] != 0:
+                    euclDist = db.get_distance(i+1, j+1)
+                    sum+=(euclDist/mencam[j])
+                    nvert+=1
+            if nvert != 0:
+                strt = sum/float(nvert)
+            else:
+                strt = -1
+            db.update_straightness(i+1, strt)
+        db.conn.commit()
 
 class Shp2Graph:
 
@@ -441,6 +506,10 @@ class Shp2Graph:
         print("> Menor Caminho Médio calculado - "+str(datetime.datetime.now()))
         self.grf.centralidade(db)
         print("> Closeness e betweeness calculados - "+str(datetime.datetime.now()))
+        self.grf.vulnerabilidade(db)
+        print("> Vulnerabilidade calculada - " + str(datetime.datetime.now()))
+        self.grf.straightness(db)
+        print("> Straightness calculado - " + str(datetime.datetime.now()))
 
     def compress_files(self, fnameout):
         zipf = zipfile.ZipFile(fnameout+'.zip', 'w', zipfile.ZIP_DEFLATED)
