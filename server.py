@@ -38,6 +38,21 @@ def upload_file():
         return 'GET'
 
 
+@app.route('/uploaderOSM', methods = ['GET', 'POST'])
+def upload_file_osm():
+    dir = 'in/'+str( uuid.uuid4())
+    if request.method == 'POST':
+        os.makedirs(dir)
+        f1 = request.files['osm']
+        if secure_filename(f1.filename).split('.')[-1] != 'osm':
+            return redirect("/app/#/home/" + "Arquivo OSM incorreto. Informar novamente!", code=302)
+        f1.save(dir+'/'+secure_filename(f1.filename))
+
+        return redirect("/converter/"+dir+'/'+secure_filename(f1.filename), code=302)
+
+    if request.method == 'GET':
+        return 'GET'
+
 @app.route('/converter/<path:path>', methods = ['GET', 'POST'])
 def convert_shp2graph(path):
     pid = str(uuid.uuid4()).replace('-', '')
@@ -64,6 +79,8 @@ def send_app(path):
 @app.route('/out/<path:path>')
 def send_out(path):
     pathjson = path
+    fields = {'CA': 'coef_aglom', 'G':'grau', 'GI':'grau_in', 'GO':'grau_out', 'MC':'mencamed', 'C':'closeness',
+              'B':'betweeness', 'ST':'straight', 'VU':'vulnerab'}
     if not os.path.exists(os.path.join('out', pathjson)):
         dir, file = os.path.split(pathjson)
         pid = dir
@@ -75,20 +92,8 @@ def send_out(path):
             field = opts[0]
             start = opts[1][1:]
             end = opts[2][1:]
-            print(start, end)
-            if field == 'CA':
-                field = 'coef_aglom'
-            elif field == 'G':
-                field = 'grau'
-            elif field == 'B':
-                field = 'betweeness'
-            elif field == 'C':
-                field = 'closeness'
-            elif field == 'MC':
-                field = 'mencamed'
-            else:
-                continue
-            where = where+tag+field+' between '+str(start)+' and '+str(end)
+            field_name = fields.get(field)
+            where = where+tag+field_name+' between '+str(start)+' and '+str(end)
             tag = ' and '
         print(where)
 
