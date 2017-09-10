@@ -1,3 +1,4 @@
+
 .gBtn {
 	margin: 1px;
 	color: #fff;
@@ -34,8 +35,8 @@ svg {
 	background-color: #FFFFFF;
 	color: #000000;
 	position: fixed;
-	top: 100px;
-	left: 5px;
+	top: 90px;
+	left: 8px;
 	padding: 1px;
 	opacity: 0.95;
 }
@@ -45,8 +46,19 @@ svg {
 	background-color: #FFFFFF;
 	color: #000000;
 	position: fixed;
+	top: 115px;
+	left: 8px;
+	padding: 1px;
+	opacity: 0.95;
+}
+
+.g4g-tabela {
+	z-index: 9999;
+	background-color: #FFFFFF;
+	color: #000000;
+	position: fixed;
 	top: 140px;
-	left: 5px;
+	left: 8px;
 	padding: 1px;
 	opacity: 0.95;
 }

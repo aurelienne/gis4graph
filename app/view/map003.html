@@ -4,13 +4,14 @@
 	<div class="labelLegenda"  ng-show="labels.legenda">
 		<table>
 			<tr ng-repeat="c in cores | reverse" ng-if="c.iCor < 6">
-				<td ng-show="c.cor != false" style="background: {{c.cor}}">Grau {{c.i}}</td>
+				<td ng-show="c.cor != false" style="background: {{c.cor}}">&nbsp;&nbsp;</td>
+				<td ng-show="c.cor != false" >Grau {{c.i}}</td>
 			</tr>
 		</table>
 	</div>
 	
 	<div class="g4g-filter">
-		<button class="gBtn"  ng-click="filter.showFilter()" >F</button><span ng-show="filter.show"> Filtrar</span>
+		<button  title="Filtrar"  class="gBtn"  ng-click="filter.showFilter()" >F</button><span ng-show="filter.show"> Filtrar</span>
 		<div ng-show="filter.show">
 			<table class="table">
 				<tr ng-repeat="g in g4g">
@@ -27,13 +28,18 @@
 	</div>
 
 	<div class="g4g-grafo">
-		<button class="gBtn" ng-click="grafo.showOptions()" >G</button><span ng-show="grafo.show"> Opçoes de Visualização</span>
+		<button title="Grafo" class="gBtn" ng-click="grafo.showOptions()" >G</button><span ng-show="grafo.show"> Grafo</span>
 		<div ng-show="grafo.show" style="max-width: 250px; text-align: center">
 			<button ng-repeat="g in g4g" class="btn" style="margin: 5px;"
 				ng-click="grafo.showGrafo(g.data)">{{g.label}}
 			</button>
 		</div>		
 	</div>
+
+	<div class="g4g-tabela">
+		<button  title="Tabela"  class="gBtn" ng-click="tabela.showTabela()" >T</button>
+	</div>
+
 	<div id="map" class="map"></div>
 	<div id="popup" class="ol-popup">
 		<a href="#" id="popup-closer" class="ol-popup-closer"></a>

@@ -10,11 +10,15 @@ app.config(function($routeProvider, $locationProvider, $sceDelegateProvider) {
 		controller : 'HomeController',
 
 	}).when('/map/:id', {
-		templateUrl : 'view/map002.html',
+		templateUrl : 'view/map003.html',
 		controller : 'MapController',
 	}).when('/map/:id/:filter', {
-		templateUrl : 'view/map002.html',
+		templateUrl : 'view/map003.html',
 		controller : 'MapController',
+
+	}).when('/tabela/:id', {
+		templateUrl : 'view/tabela001.html',
+		controller : 'TabelaController',
 
 	}).when('/graph/:id/:field', {
 		cache: false,

@@ -81,7 +81,7 @@ app.factory('DataFactory',function(){
 });
 
 app.controller('HomeController', function($scope, $http,$routeParams) {
-	if ($routeParams.msg)
+	if ($routeParams.id)
 		$scope.msg = $routeParams.msg;
 	else
 		$scope.msg = false;
@@ -91,6 +91,38 @@ app.controller('HomeController', function($scope, $http,$routeParams) {
 		$scope.show = show;
 	};
 });
+
+app.controller('TabelaController', function($scope, $http,$routeParams, DataFactory) {
+	$scope.all = DataFactory.getAll();
+	$scope.results = [];
+	$scope.labels = [];
+	for (var i=0;i<$scope.all.length;i++) {
+		//console.log(all[i]);
+		url = '../out/'+$routeParams.id+'/outorder_'+$scope.all[i].data+'.json';
+		$http({
+				method : 'GET',
+				url : url
+		}).then(function successCallback(r,r1) {
+			var fTemp = r.config.url.match(/outorder_(.*?).json/g);
+			var field = fTemp[0].slice(9,-5);
+			$scope.results.push({
+				"field":field,
+				"data":r.data
+			});
+		}, function erroCallBack(r) {
+			//console.log('erro',r);	
+		});	
+	}
+	
+	$scope.showTabela = function(b) {
+		$scope.labels = [];
+		for (var key in b.data[0]) {
+			$scope.labels.push(key);
+		}
+		$scope.values = b.data;
+	};
+});
+
 
 app.controller('GraphController', function($scope, $http, $routeParams, $location, $route , DataFactory) {
 	
@@ -272,6 +304,7 @@ app.controller('MapController', function($scope, $http, $routeParams,$location, 
 		var options = opt_options || {};
 
 		var button = document.createElement('button');
+		button.title = "Download";
 		button.innerHTML = 'D';
 
 		var this_ = this;
@@ -362,12 +395,13 @@ app.controller('MapController', function($scope, $http, $routeParams,$location, 
 	}); 
 
 
+	/*
 	map.on("move", function(e) {
 		console.log('aqui');
 		var position = e.map.getLonLatFromViewPortPx(e.xy);
 		OpenLayers.Util.getElement("tooltip").innerHTML = "<label>Latitude: " + position.lat + "</label><br/><label>Longitude: " + position.lon + "</label>";
 	});
-	
+	*/
 	$scope.corPadrao = '#AAAAAA';
 	$scope.cores = [];
 
@@ -576,6 +610,14 @@ app.controller('MapController', function($scope, $http, $routeParams,$location, 
 			window.open( '#/graph/'+$routeParams.id+'/'+f,'_blank');
 		}
 	};
+	
+	
+	$scope.tabela = {
+		showTabela: function() {
+			window.open( '#/tabela/'+$routeParams.id,'_blank');
+		}
+	};
+	
 	
 
 

@@ -1,0 +1,15 @@
+<div>
+<button class="btn" ng-repeat='b in results' ng-click="showTabela(b)">
+	{{b.field}}
+</button>
+</div>
+
+<table class="table  table-striped">
+	<tr>
+		<th  ng-repeat="key in labels"> {{key}} </th>
+	</tr>
+
+	<tr ng-repeat="v in values" >
+		<td class="panel-info" ng-repeat="key in labels"> {{ v[key] }} </td>
+	</tr>
+</table>
