@@ -1,3 +1,4 @@
+
 app.factory('DataFactory',function(){
 	var extendedData = [];
 	var g4gData = ['grau','grau_in','grau_out','betweeness','closeness','coef_aglom',
@@ -98,7 +99,7 @@ app.controller('TabelaController', function($scope, $http,$routeParams, DataFact
 	$scope.labels = [];
 	for (var i=0;i<$scope.all.length;i++) {
 		//console.log(all[i]);
-		url = '../out/'+$routeParams.id+'/outorder_'+$scope.all[i].data+'.json';
+		url = HOST+'out/'+$routeParams.id+'/outorder_'+$scope.all[i].data+'.json';
 		$http({
 				method : 'GET',
 				url : url
@@ -201,7 +202,7 @@ app.controller('GraphController', function($scope, $http, $routeParams, $locatio
 	}); 
 
 
-	var url = '../out/'+$routeParams.id+'/';
+	var url = HOST+'out/'+$routeParams.id+'/';
 
 	if ($routeParams.filter != undefined) {
 		url += $routeParams.filter+'.json'; 
@@ -309,7 +310,7 @@ app.controller('MapController', function($scope, $http, $routeParams,$location, 
 
 		var this_ = this;
 		var handleRotateNorth = function() {
-			window.open('../out/'+$routeParams.id+'/out.zip');
+			window.open(HOST+'out/'+$routeParams.id+'/out.zip');
 		};
 
 		button.addEventListener('click', handleRotateNorth, false);
@@ -459,7 +460,7 @@ app.controller('MapController', function($scope, $http, $routeParams,$location, 
 		legenda: true
 	};
 
-	var url = '../out/'+$routeParams.id+'/';
+	var url = HOST+'out/'+$routeParams.id+'/';
 	if ($routeParams.filter != undefined) {
 		url += $routeParams.filter+'.json'; 
 	} else {

@@ -10,9 +10,16 @@
 		</table>
 	</div>
 	
+	<!--div class="g4g-download">
+		<button  title="Downad"  class="gBtn" ng-click="download.download()" >D</button>
+	</div-->
+
 	<div class="g4g-filter">
-		<button  title="Filtrar"  class="gBtn"  ng-click="filter.showFilter()" >F</button><span ng-show="filter.show"> Filtrar</span>
-		<div ng-show="filter.show">
+			<div style="text-align:right; width: 100%" ><span ng-show="filter.show"> Filtrar</span>
+			<button  title="Filtrar"  class="gBtn"  ng-click="filter.showFilter()" >F</button></div>
+			
+			
+			<div ng-show="filter.show">
 			<table class="table">
 				<tr ng-repeat="g in g4g">
 					<td>{{g.label}}</td>
@@ -28,7 +35,11 @@
 	</div>
 
 	<div class="g4g-grafo">
-		<button title="Grafo" class="gBtn" ng-click="grafo.showOptions()" >G</button><span ng-show="grafo.show"> Grafo</span>
+		<div style="text-align:right; width: 100%" ><span ng-show="grafo.show"> Grafo</span>
+			<button title="Grafo" class="gBtn" ng-click="grafo.showOptions()" >G</button>
+		</div>
+		
+		
 		<div ng-show="grafo.show" style="max-width: 250px; text-align: center">
 			<button ng-repeat="g in g4g" class="btn" style="margin: 5px;"
 				ng-click="grafo.showGrafo(g.data)">{{g.label}}
