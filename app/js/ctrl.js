@@ -262,7 +262,17 @@ app.controller('GraphController', function($scope, $http, $routeParams, $locatio
 app.controller('MapController', function($scope, $http, $routeParams,$location, Notification,DataFactory) {
 
 	$scope.g4g = DataFactory.getAll();
-	
+	$scope.currentLegenda = $scope.g4g[0];
+	$scope.$watch('currentLegenda',function(n){
+		rangeColors(n);
+		if ($scope.objrender == undefined) return true;
+
+		var arrTemp = map.getSize();
+		arrTemp[0] += Math.random(10000); //pequeno desolcamento para forçar re-render
+		//console.log(map.getSize(),arrTemp);
+		map.getView().fit($scope.objrender.getExtent(), arrTemp);
+	});
+	//console.log($scope.g4g);
 	/*popup
 	* 
 	*/
@@ -329,10 +339,8 @@ app.controller('MapController', function($scope, $http, $routeParams,$location, 
 	ol.inherits(fctDownload, ol.control.Control); 
 
 	/*
-	 * fim button
-	 */	
-	
-
+	* fim button
+	*/	
 	var mousePositionControl = new ol.control.MousePosition({
 		coordinateFormat : ol.coordinate.createStringXY(4),
 		projection : 'EPSG:4326',
@@ -360,6 +368,7 @@ app.controller('MapController', function($scope, $http, $routeParams,$location, 
 			rotation : 0
 		})
 	});
+	
 
 
 	/**
@@ -407,47 +416,13 @@ app.controller('MapController', function($scope, $http, $routeParams,$location, 
 	$scope.cores = [];
 
 	$scope.coresT = [
-		"#00ffff",
-		"#a52a2a",
-		"#00008b",
-		"#006400",
-		"#bdb76b",
-		"#8b008b",
-		"#556b2f",
-		"#ff8c00",
-		"#9932cc",
-		"#8b0000",
-		"#e9967a",
-		"#9400d3",
-		"#ff00ff",
-		"#ffd700",
-		"#008000",
-		"#4b0082",
-		"#008b8b",
-		"#f0e68c",
-		"#add8e6",
-		"#e0ffff",
-		"#90ee90",
-		"#d3d3d3",
-		"#ffb6c1",
-		"#ffffe0",
-		"#00ff00",
-		"#ff00ff",
 		"#800000",
-		"#000080",
-		"#808000",
-		"#ffa500",
-		"#ffc0cb",
-		"#800080",
-		"#ff0000",
-		"#c0c0c0",
-		"#a9a9a9",
-		"#ffffff",
-		"#ffff00",
-		"#f0ffff",
-		"#0000ff",
-		"#000000",
-		
+		"#FF0000",
+		"#FFA500",
+		"#FFFF00",
+		"#00FF00",
+		"#008000",
+		"#556b2f"
 	];
 	
 	$scope.coresGrau = [];
@@ -480,30 +455,12 @@ app.controller('MapController', function($scope, $http, $routeParams,$location, 
 
 		for (var i=1;i<data.features.length;i++) {
 			DataFactory.setLimits(data.features[i].properties,$routeParams.filter != undefined);
-			$scope.coresGrau[data.features[i].properties.grau] = $scope.corPadrao;
 		}
 		$scope.limites = DataFactory.getLimits();
 		$scope.allLimites = DataFactory.getAllLimits();
 		
-		//console.log($scope.coresGrau);
-		iCor = 0;
-		for (i=$scope.coresGrau.length - 1; i >= 0;i--) {
-			if ($scope.coresGrau[i] === $scope.corPadrao) {
-				//console.log($scope.coresGrau[i]);
-				if ($scope.coresT[iCor] != undefined) {
-					$scope.cores[i] = {cor: $scope.coresT[iCor],i:i,iCor:iCor};
-					iCor++;
-				} else {
-					$scope.cores[i] = {cor: "#000000",i:i,iCor:0};
-				}
-			} else {
-				$scope.cores[i] = {cor: false,i:i,iCor:0};
-			}
-		}
+		rangeColors($scope.currentLegenda);
 		
-		//$scope.cores.reverse();
-		//console.log($scope.cores);
-
 		$scope.obj = data;
 		addLayer();
 		
@@ -511,14 +468,49 @@ app.controller('MapController', function($scope, $http, $routeParams,$location, 
 		$scope.labels.carregando = false;
 		Notification.warning(r);
 	});
+	
+	function rangeColors(f) {
+		if ($scope.limites == undefined) return true;
+		var qtdCores = $scope.coresT.length;
+		var min = $scope.limites[f.data].min;
+		var max = $scope.limites[f.data].max;
+		var inc = (max - min) / (qtdCores-1);
+		//console.log(inc);
+		$scope.cores = [];
+		var count=0;
+		for (var i=max;i>=min;i-=inc) {
+			$scope.cores.push({
+				"from":i,
+				"to":i+inc,
+				"color":$scope.coresT[count]
+			});
+			count++;
+		}
+		$scope.cores[count-1].from = min;
+				
+	}
+	
+	function getCor(o) {
+		
+		var value = o[$scope.currentLegenda.data];
+		
+		for (var i=0;i<$scope.cores.length;i++) {
 			
+			if (value >= $scope.cores[i].from) {
+				//console.log(value,$scope.cores[i].color);
+				return $scope.cores[i].color;
+			}
+				
+		}
+		return $scope.cores[i-1].color;
+	}
 
 	function styleFunction(f) {
 		if (is.null(f.R.grau)) {
 			//console.log(f);
 			cor = $scope.corPadrao;
 		} else {
-			cor = $scope.cores[f.R.grau].cor;
+			cor = getCor(f.R);
 		}
 		
 		
@@ -549,10 +541,13 @@ app.controller('MapController', function($scope, $http, $routeParams,$location, 
 			source : _geojson_vectorSource,
 			style : styleFunction
 		});
+		
+		
 
 		map.addLayer(_geojson_vectorLayer); 
 		
 		map.getView().fit(_geojson_vectorSource.getExtent(), map.getSize());
+		$scope.objrender = _geojson_vectorSource;
 		
 	};
 

@@ -2,10 +2,13 @@
 	<div class="labelPosition"><b>GIS4Graph</b> | <label id="mouse-position"></label></div>
 	<div class="labelCarregando" ng-show="labels.carregando">Carregando</div>
 	<div class="labelLegenda"  ng-show="labels.legenda">
+		<select style="max-width: 5em;" ng-model="currentLegenda" ng-options="g.label for g in g4g">
+			<option value = "">Selecione...</option>
+		</select>
 		<table>
-			<tr ng-repeat="c in cores | reverse" ng-if="c.iCor < 6">
-				<td ng-show="c.cor != false" style="background: {{c.cor}}">&nbsp;&nbsp;</td>
-				<td ng-show="c.cor != false" >Grau {{c.i}}</td>
+			<tr ng-repeat="c in cores">
+				<td style="background: {{c.color}}">&nbsp;&nbsp;</td>
+				<td ><b>{{c.from|number}}</b></td><td>a</td><td><b>{{c.to|number}}</b></td>
 			</tr>
 		</table>
 	</div>
