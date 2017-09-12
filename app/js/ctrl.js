@@ -439,7 +439,7 @@ app.controller('MapController', function($scope, $http, $routeParams,$location, 
 	if ($routeParams.filter != undefined) {
 		url += $routeParams.filter+'.json'; 
 	} else {
-		url += 'out.json'; 
+		url += 'out_nodes.json'; 
 	}
 	
 	$http({
