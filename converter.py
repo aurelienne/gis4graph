@@ -17,7 +17,8 @@ from unicodedata import normalize
 import zipfile
 import subprocess
 import datetime
-
+#from concurrent.futures import as_completed, ThreadPoolExecutor, ProcessPoolExecutor
+import multiprocessing as mproc
 
 config = configparser.ConfigParser()
 py_path = os.path.dirname(os.path.abspath(__file__))
@@ -61,6 +62,11 @@ class Database:
             self.conn = psycopg2.connect(
                 "host=" + hostDB + " port=" + portDB + " dbname=" + nameDB + " user=" + userDB + " password=" + passDB)
 
+    def create_connection(self):
+        conn = psycopg2.connect(
+                "host=" + hostDB + " port=" + portDB + " dbname=" + nameDB + " user=" + userDB + " password=" + passDB)
+        return conn
+
     def create_database(self):
         os.environ['PGPASSWORD'] = passDB
         cont=subprocess.check_output('psql -lqt -h ' + hostDB + ' -U ' + userDB + ' -w | cut -d \| -f 1 | grep ' + nameDB + ' | wc -l', shell=True).decode('ascii').strip()
@@ -73,7 +79,7 @@ class Database:
             cur.close()
             conn.close()
         self.conn = psycopg2.connect("host="+hostDB+" port="+portDB+" dbname="+nameDB+" user="+userDB+" password="+passDB)
-        self.cria_tabela_geral()
+        self.create_netwk_table()
         self.cria_tabela_conexoes()
 
     def import_shapefile(self):
@@ -158,7 +164,7 @@ class Database:
         cur.close()
         return qtd_registros
 
-    def get_conexoes(self):
+    def get_conex(self):
         lista_conexoes = []
         cur = self.conn.cursor()
         cur.execute('select de, para from '+self.conex_table+' inner join '+self.nodes_table+' on de = gid')
@@ -168,16 +174,21 @@ class Database:
         cur.close()
         return lista_conexoes
 
-    def get_distance(self, source, target):
-        cur = self.conn.cursor()
-        cur.execute('select st_distance(st_transform(g1.geom,5880),st_transform(g2.geom,5880))/1000 '
-                    'from '+self.nodes_table+' as g1,'+
-                            self.nodes_table+' as g2 '
-                    'where g1.gid = %s and g2.gid = %s', (source, target))
-        dist = float(cur.fetchone()[0])
-        return dist
+    def get_distance(self, source, targets):
+        conn = self.create_connection()
+        cur = conn.cursor()
+        dists = []
+        for target in targets:
+            cur.execute('select st_distance(st_transform(g1.geom,5880),st_transform(g2.geom,5880))/1000 '
+                        'from '+self.nodes_table+' as g1,'+
+                                self.nodes_table+' as g2 '
+                        'where g1.gid = %s and g2.gid = %s', (source, target))
+            dists.append(float(cur.fetchone()[0]))
+        cur.close()
+        conn.close()
+        return dists
 
-    def cria_tabela_geral(self):
+    def create_netwk_table(self):
         cur = self.conn.cursor()
         cur.execute('drop table if exists '+self.netwk_table)
         self.conn.commit()
@@ -188,7 +199,8 @@ class Database:
                      grau_medio numeric(6,2), \
                      coef_aglom_medio numeric(6,2), \
                      diametro smallint, \
-                     densidade numeric(6,4))')
+                     densidade numeric(6,4), \
+                     strt_medio numeric(6,4))')
         self.conn.commit()
         cur.execute('insert into '+self.netwk_table+' (ordem) values (0)')
         self.conn.commit()
@@ -222,24 +234,24 @@ class Database:
             cur.execute('update '+self.nodes_table+' set grau = %s where gid = %s', (grau, id))
         cur.close()
 
-    def update_grau_medio(self, grau_medio):
+    def update_avg_degree(self, grau_medio):
         cur = self.conn.cursor()
         cur.execute('update '+self.netwk_table+' set grau_medio = %s', (grau_medio, ))
         self.conn.commit()
         cur.close()
 
-    def update_coef_aglomeracao(self, id, coef):
+    def update_clustering_coeff(self, id, coef):
         cur = self.conn.cursor()
         cur.execute('update '+self.nodes_table+' set coef_aglom = %s where gid = %s', (coef, id))
         cur.close()
 
-    def update_coef_aglom_medio(self, coef):
+    def update_avg_cluster_coeff(self, coef):
         cur = self.conn.cursor()
         cur.execute('update '+self.netwk_table+' set coef_aglom_medio = %s', (coef, ))
         self.conn.commit()
         cur.close()
 
-    def update_menor_caminho_medio(self, id, valor):
+    def update_avg_shortest_path(self, id, valor):
         cur = self.conn.cursor()
         cur.execute('update '+self.nodes_table+' set mencamed = %s where gid = %s', (valor, id))
         cur.close()
@@ -270,6 +282,11 @@ class Database:
         cur.execute('update '+self.nodes_table+' set straight = %s where gid = %s', (valor, id))
         cur.close()
 
+    def update_avg_straight(self, valor):
+        cur = self.conn.cursor()
+        cur.execute('update '+self.netwk_table+' set strt_medio = %s', (valor,))
+        cur.close()
+        
     def encerra_conexao(self):
         self.conn.close()
 
@@ -289,8 +306,7 @@ class Database:
         self.cols = cur.fetchone()[0]
         cur2.execute("select "+self.cols+" from "+self.nodes_table+" where gid = %s", (gid,))
         jsondata = simplejson.dumps(cur2.fetchall(), use_decimal=True)
-        jsondata = jsondata.replace('[', '')
-        jsondata = jsondata.replace(']', '').replace('NaN', '""')
+        jsondata = jsondata.replace('[', '').replace(']', '').replace('NaN', 'null')
         cur.close()
         cur2.close()
         return jsondata
@@ -298,6 +314,7 @@ class Database:
     def export_geojson(self, where='', pid='', out=''):
         if pid != '':
             self.nodes_table = self.nodes_table + pid
+
         cur = self.conn.cursor()
         cur.execute('select gid, st_asgeojson(geom) from '+self.nodes_table+' '+where+' order by gid')
         gjson = '{ "type": "FeatureCollection", "features": [ '
@@ -309,8 +326,19 @@ class Database:
         gjson = gjson[0:-1] + ']}'
         if out == '':
             out = self.file_out
-        gj = open(out+'.json','w')
+        gj = open(out+'_nodes.json','w')
         gj.write(gjson)
+        gj.close()
+
+    def export_network_json(self):
+        cur = self.conn.cursor(cursor_factory=RealDictCursor)
+        cur.execute('select ordem, comprimento, grau_medio, coef_aglom_medio, diametro, densidade, strt_medio from '
+                     +self.netwk_table)
+        prop_geral = simplejson.dumps(cur.fetchall(), use_decimal=True, ignore_nan=True)
+        prop_geral = prop_geral.replace('NaN','null')
+        cur.close()
+        gj = open(self.file_out + '_netwrk.json', 'w')
+        gj.write(prop_geral)
         gj.close()
 
     def export_grafojson(self):
@@ -322,18 +350,37 @@ class Database:
         # Dict of edges
         cols = ('de','para')
         lista = []
-        lista_conex = self.get_conexoes()
+        lista_conex = self.get_conex()
         for item in lista_conex:
             lista.append(dict(zip(cols, item)))
 
         # Puts together nodes and edges and dumps all as json
         grafodata = dict(labels=results, links=lista)
-        jsondata = simplejson.dumps(grafodata, use_decimal=True)
-        jsondata = jsondata.replace('NaN','""')
+        jsondata = simplejson.dumps(grafodata, use_decimal=True, ignore_nan=True)
+        jsondata = jsondata.replace('NaN','null')
         jg = open(self.file_out + '_grafo.json', 'w')
         jg.write(jsondata)
         jg.close()
 
+    def export_ordered_json(self, order_cols, pid=''):
+        if pid == '':
+            pid = self.pid
+        cur = self.conn.cursor()
+        cur2 = self.conn.cursor(cursor_factory=RealDictCursor)
+        cur.execute("SELECT array_to_string(ARRAY(SELECT c.column_name::text "
+                    "FROM information_schema.columns As c "
+                    "WHERE table_name = '"+self.nodes_table+"' "
+                    "AND c.column_name NOT IN('geom')), ',')")
+        self.cols = cur.fetchone()[0]
+        for ord_col in order_cols:
+            cur2.execute("select "+self.cols+" from "+self.nodes_table+" order by "+ord_col+" DESC nulls last limit 100")
+            jsondata = simplejson.dumps(cur2.fetchall(), use_decimal=True, ignore_nan=True)
+            jg = open(self.file_out + 'order_'+ord_col+'.json', 'w')
+            jg.write(jsondata)
+            jg.close()
+        cur.close()
+        cur2.close()
+        return jsondata
 
     def drop_tables(self):
         cur = self.conn.cursor()
@@ -359,25 +406,27 @@ class Grafo:
         self.e_betw_medio = None
         self.closeness_medio = None
         self.directed = directed
+        self.mencamList = None
 
-        self.cria_grafo()
-        #self.plota_grafo()
+        self.create_graph()
+        #self.plot_graph()
         self.densidade = self.grafo.density()
 
-    def cria_grafo(self):
+    def create_graph(self):
         self.grafo = Graph(directed=self.directed)
         self.grafo.add_vertices(self.ordem)
         for itens in self.lista_conexoes:
             de, para = itens[0], itens[1]
             self.grafo.add_edges([(de-1, para-1)])
 
-    def plota_grafo(self):
+    def plot_graph(self):
         layout = self.grafo.layout("fr")
         visual_style = {}
         visual_style["vertex_size"] = 10
         plot(self.grafo, self.figura, layout=layout, bbox=(450, 300), **visual_style)
 
-    def calcula_grau(self, db):
+    def calculate_degree(self):
+        global db
         grauList = self.grafo.degree()
         grauInList = self.grafo.degree(mode=IN)
         grauOutList = self.grafo.degree(mode=OUT)
@@ -388,26 +437,38 @@ class Grafo:
             db.update_grau_vertice(i+1, grau, grau_in, grau_out)
         db.conn.commit()
         self.grau_medio = sum(self.grafo.degree()) / self.ordem
-        db.update_grau_medio(self.grau_medio)
+        db.update_avg_degree(self.grau_medio)
 
-    def calcula_coef(self, db):
+    def clustering_coeff(self):
+        global db
         i = 0
         for coef in self.grafo.transitivity_local_undirected():
             i += 1
-            db.update_coef_aglomeracao(i, coef)
+            db.update_clustering_coeff(i, coef)
         db.conn.commit()
         self.coef_aglom_medio = self.grafo.transitivity_avglocal_undirected(mode="zero")
-        db.update_coef_aglom_medio(self.coef_aglom_medio)
+        db.update_avg_cluster_coeff(self.coef_aglom_medio)
 
-    def menor_caminho_medio(self, db):
-        for i in range(0, self.ordem):
-            mencam = self.grafo.shortest_paths_dijkstra(source=i)[0]
-            caminhoMed = mean(mencam[x] for x in range(len(mencam)) if (mencam[x]!=float('Inf'))and(mencam[x]!=0))
-            db.update_menor_caminho_medio(i+1, caminhoMed)
+    def avg_shortest_path(self):
+        global db
+        self.mencamList = []
+        pool = mproc.Pool(processes=mproc.cpu_count())
+        results = pool.map(self.shortest_path, range(self.ordem))
+        i = 0
+        for caminhoMed, mencam in results:
+            db.update_avg_shortest_path(i+1, caminhoMed)
+            self.mencamList.append(mencam)
+            i += 1
+        pool.close()
         db.conn.commit()
         diametro = self.grafo.diameter()
         db.update_diametro(diametro)
         self.diametro = diametro
+
+    def shortest_path(self, i):
+        mencam = self.grafo.shortest_paths_dijkstra(source=i)[0]
+        caminhoMed = mean(mencam[x] for x in range(len(mencam)) if (mencam[x] != float('Inf')) and (mencam[x] != 0))
+        return caminhoMed, mencam
 
     def plota_histograma(self):
         plt.hist(self.grafo.degree())
@@ -418,7 +479,8 @@ class Grafo:
         fig.set_size_inches(2.6, 2.2)
         fig.savefig(os.path.join(fnameout+'_hist.png'))
 
-    def centralidade(self, db):
+    def centralities(self):
+        global db
         lista_bet = self.grafo.betweenness()
         for i in range(0, len(lista_bet)):
             db.update_betweeness(i+1, lista_bet[i])
@@ -429,7 +491,6 @@ class Grafo:
         db.conn.commit()
 
     def eficiencia_global(self, g):
-        print(datetime.datetime.now())
         sumMC = 0
         lenMC = 0
         for i in range(0, g.vcount()-1):
@@ -439,10 +500,10 @@ class Grafo:
             lenMC = lenMC + len(invMencam)
 
         eg = sumMC/lenMC
-        print(datetime.datetime.now())
         return eg
 
-    def vulnerabilidade(self, db):
+    def vulnerabilidade(self):
+        global db
         # Eficiencia com o vertice
         eg = self.eficiencia_global(self.grafo)
         # Eficiencia sem o vertice
@@ -454,32 +515,52 @@ class Grafo:
             db.update_vulnerabilide(i+1, v)
         db.conn.commit()
 
-    def straightness(self, db):
-        for i in range(0, self.ordem):
-            mencam = self.grafo.shortest_paths_dijkstra(source=i)[0]
-            nvert = 0
-            sum = 0
-            for j in range(0, self.ordem):
-                if mencam[j] != 0:
-                    euclDist = db.get_distance(i+1, j+1)
-                    sum+=(euclDist/mencam[j])
-                    nvert+=1
-            if nvert != 0:
-                strt = sum/float(nvert)
-            else:
-                strt = -1
-            db.update_straightness(i+1, strt)
+    def straightness(self):
+        global db
+        pool2 = mproc.Pool(processes=mproc.cpu_count())
+        results = pool2.map(self.straight_by_vertex, range(self.ordem))
+        pool2.close()
+
+        i = 0
+        acc = 0
+        nvert = 0
+        for straight in results:
+            db.update_straightness(i+1, straight)
+            i += 1
+            if straight != -1:
+                acc+=straight
+                nvert+=1
+        avg_straight = acc/float(nvert)
+        db.update_avg_straight(avg_straight)
         db.conn.commit()
+
+    def straight_by_vertex(self, i):
+        global db
+        mencam = self.mencamList[i]
+        nvert = 0
+        sumV = 0
+        euclDists = db.get_distance(i + 1, range(1, self.ordem+1))
+        for j in range(self.ordem):
+            if mencam[j] != 0 and mencam[j] != float('Inf'):
+                euclDist = euclDists[j]
+                sumV += (euclDist / mencam[j])
+                nvert += 1
+        if nvert != 0:
+            strt = sumV / float(nvert)
+        else:
+            strt = -1
+        return strt
 
 class Shp2Graph:
 
     def __init__(self, fnamein, fnameout, pid):
+        global db
         print(datetime.datetime.now())
         file_type = os.path.splitext(fnamein)[-1]
         db = Database(fnamein, fnameout, pid, file_type)
         print("Import realizado - "+str(datetime.datetime.now()))
         qv = db.get_qtd_registros()
-        lc = db.get_conexoes()
+        lc = db.get_conex()
         if file_type == '.osm':  # Cria grafo direcionado
             self.grf = Grafo(qv, lc, fnameout, True)
         else:
@@ -487,34 +568,36 @@ class Shp2Graph:
         print("Grafo construido - " + str(datetime.datetime.now()))
         db.update_ordem_comp_densidade(self.grf.ordem, self.grf.comp, self.grf.densidade)
 
-        self.realiza_calculos(db)
+        self.realiza_calculos()
         print("Calculos realizados - " + str(datetime.datetime.now()))
         #self.grf.plota_histograma()
         db.export_shapefile()
+        db.export_network_json()
         db.export_geojson()
         db.export_grafojson()
+        db.export_ordered_json(order_cols=['grau','closeness','coef_aglom','mencamed','betweeness','straight'])
         self.compress_files(fnameout)
         #db.drop_tables()
         db.encerra_conexao()
 
-    def realiza_calculos(self, db):
-        self.grf.calcula_grau(db)
+    def realiza_calculos(self):
+        self.grf.calculate_degree()
         print("> Grau calculado - "+str(datetime.datetime.now()))
-        self.grf.calcula_coef(db)
+        self.grf.clustering_coeff()
         print("> Coef. Aglom. calculado - "+str(datetime.datetime.now()))
-        self.grf.menor_caminho_medio(db)
+        self.grf.avg_shortest_path()
         print("> Menor Caminho Médio calculado - "+str(datetime.datetime.now()))
-        self.grf.centralidade(db)
+        self.grf.centralities()
         print("> Closeness e betweeness calculados - "+str(datetime.datetime.now()))
-        self.grf.vulnerabilidade(db)
-        print("> Vulnerabilidade calculada - " + str(datetime.datetime.now()))
-        self.grf.straightness(db)
+        self.grf.straightness()
         print("> Straightness calculado - " + str(datetime.datetime.now()))
+        #self.grf.vulnerabilidade()
+        #print("> Vulnerabilidade calculada - " + str(datetime.datetime.now()))
 
     def compress_files(self, fnameout):
         zipf = zipfile.ZipFile(fnameout+'.zip', 'w', zipfile.ZIP_DEFLATED)
-        files = (fnameout+'.dbf', fnameout+'.shp', fnameout+'.shx', fnameout+'.prj', fnameout+'.txt', fnameout+'.json',
-            fnameout+'_grafo.png', fnameout+'_hist.png')
+        files = (fnameout+'.dbf', fnameout+'.shp', fnameout+'.shx', fnameout+'.prj', fnameout+'_nodes.json',
+                 fnameout+'_grafo.json', fnameout+'_netwrk.json', fnameout+'_grafo.png', fnameout+'_hist.png')
         for item in files:
             if os.path.exists(item):
                 zipf.write(item)
