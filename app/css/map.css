@@ -30,12 +30,12 @@ svg {
 	height: 100%;
 }
 
-.g4g-download {
+.g4g-info{
 	z-index: 10001;
 	background-color: #FFFFFF;
 	color: #000000;
 	position: fixed;
-	top: 10px;
+	top: 85px;
 	right: 8px;
 	padding: 1px;
 	opacity: 0.95;

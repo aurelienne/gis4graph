@@ -13,9 +13,21 @@
 		</table>
 	</div>
 	
-	<!--div class="g4g-download">
-		<button  title="Downad"  class="gBtn" ng-click="download.download()" >D</button>
-	</div-->
+	<div class="g4g-info">
+		<div style="text-align:right; width: 100%" ><span ng-show="info.show"> Informações da Rede</span>
+		<button  title="Downad"  class="gBtn" ng-click="info.showInfo()" >i</button></div>
+		<div ng-show="info.show">
+			<table class="table">
+				<tr><td>Coef. Aglom. Médio</td><td>{{info.net.coef_aglom_medio}}</td></tr>
+				<tr><td>Comprimento</td><td>{{info.net.comprimento}}</td></tr>
+				<tr><td>Densidade</td><td>{{info.net.densidade}}</td></tr>
+				<tr><td>Diâmetro</td><td>{{info.net.diametro}}</td></tr>
+				<tr><td>Grau Médio</td><td>{{info.net.grau_medio}}</td></tr>
+				<tr><td>Ordem</td><td>{{info.net.ordem}}</td></tr>
+				<tr><td>Straitness Méedio</td><td>{{info.net.strt_medio}}</td></tr>
+			</table>
+		</div>
+	</div>
 
 	<div class="g4g-filter">
 			<div style="text-align:right; width: 100%" ><span ng-show="filter.show"> Filtrar</span>

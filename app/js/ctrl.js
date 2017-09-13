@@ -5,7 +5,7 @@ app.factory('DataFactory',function(){
 		'mencamed','straight','vulnerab'
 	];
 	var g4gLabels = ['Grau','Grau In','Grau Out','Betweeness','Closeness','Coef. Aglom.',
-		'Min. Cam. Méd.','Straight','Vulnerab.'
+		'Min. Cam. Méd.','Straitness','Vulnerab.'
 	];
 	var g4gSiglas = ['G','GI','GO','B','C','CA','MC','ST','VU'];
 	
@@ -437,10 +437,28 @@ app.controller('MapController', function($scope, $http, $routeParams,$location, 
 
 	var url = HOST+'out/'+$routeParams.id+'/';
 	if ($routeParams.filter != undefined) {
+		urlNet = url + 'out_netwrk.json';
 		url += $routeParams.filter+'.json'; 
 	} else {
+		urlNet = url + 'out_netwrk.json';
 		url += 'out_nodes.json'; 
 	}
+
+	$scope.info = {
+		show: false,
+		showInfo: function() {
+			$scope.info.show = !$scope.info.show;
+		},
+		net: false
+	}
+	
+	$http({
+		method : 'GET',
+		url : urlNet
+	}).then(function successCallback(r) {
+		console.log(r);
+		$scope.info.net = r.data[0];
+	});
 	
 	$http({
 		method : 'GET',
@@ -475,6 +493,10 @@ app.controller('MapController', function($scope, $http, $routeParams,$location, 
 		var min = $scope.limites[f.data].min;
 		var max = $scope.limites[f.data].max;
 		var inc = (max - min) / (qtdCores-1);
+		if (inc <= 0) {
+			alert('Índice sem interfalo definido');
+			return false;
+		}
 		//console.log(inc);
 		$scope.cores = [];
 		var count=0;
@@ -606,6 +628,7 @@ app.controller('MapController', function($scope, $http, $routeParams,$location, 
 			window.open( '#/graph/'+$routeParams.id+'/'+f,'_blank');
 		}
 	};
+	
 	
 	
 	$scope.tabela = {
