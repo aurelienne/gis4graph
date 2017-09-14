@@ -492,6 +492,7 @@ app.controller('MapController', function($scope, $http, $routeParams,$location, 
 		var qtdCores = $scope.coresT.length;
 		var min = $scope.limites[f.data].min;
 		var max = $scope.limites[f.data].max;
+		//console.log(max);
 		var inc = (max - min) / (qtdCores-1);
 		if (inc <= 0) {
 			alert('Índice sem interfalo definido');
@@ -500,7 +501,7 @@ app.controller('MapController', function($scope, $http, $routeParams,$location, 
 		//console.log(inc);
 		$scope.cores = [];
 		var count=0;
-		for (var i=max;i>=min;i-=inc) {
+		for (var i=max-inc;i>=min;i-=inc) {
 			$scope.cores.push({
 				"from":i,
 				"to":i+inc,
