@@ -5,7 +5,7 @@ app.factory('DataFactory',function(){
 		'mencamed','straight','vulnerab'
 	];
 	var g4gLabels = ['Degree','Degree In','Degree Out','Betweeness','Closeness','Clust. Coeff.',
-		'Shortest Path','Straitness','Vulnerab.'
+		'Shortest Path','Straightness','Vulnerab.'
 	];
 	var g4gSiglas = ['G','GI','GO','B','C','CA','MC','ST','VU'];
 	
@@ -394,7 +394,7 @@ app.controller('MapController', function($scope, $http, $routeParams,$location, 
 		if (feature) {
 			var txt = 
 				DataFactory.getLabel('coef_aglom')+': '+feature.get('coef_aglom')+'<br>'+
-				DataFactory.getLabel('grau')+'Grau: '+feature.get('grau')+'<br>'+
+				DataFactory.getLabel('grau')+': '+feature.get('grau')+'<br>'+
 				DataFactory.getLabel('betweeness')+': '+feature.get('betweeness')+'<br>'+
 				DataFactory.getLabel('mencamed')+': '+feature.get('mencamed')+'<br>'+
 				DataFactory.getLabel('closeness')+': '+feature.get('closeness')+'<br>'+
