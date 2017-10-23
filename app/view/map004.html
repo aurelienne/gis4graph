@@ -1,37 +1,37 @@
 <div>
 	<div class="labelPosition"><b>GIS4Graph</b> | <label id="mouse-position"></label></div>
-	<div class="labelCarregando" ng-show="labels.carregando">Carregando</div>
+	<div class="labelCarregando" ng-show="labels.carregando">Loading</div>
 	<div class="labelLegenda"  ng-show="labels.legenda">
 		<select style="max-width: 5em;" ng-model="currentLegenda" ng-options="g.label for g in g4g">
-			<option value = "">Selecione...</option>
+			<option value = "">Choose...</option>
 		</select>
 		<table>
 			<tr ng-repeat="c in cores">
 				<td style="background: {{c.color}}">&nbsp;&nbsp;</td>
-				<td ><b>{{c.from|number}}</b></td><td>a</td><td><b>{{c.to|number}}</b></td>
+				<td ><b>{{c.from|number}}</b></td><td>to</td><td><b>{{c.to|number}}</b></td>
 			</tr>
 		</table>
 	</div>
 	
 	<div class="g4g-info">
-		<div style="text-align:right; width: 100%" ><span ng-show="info.show"> Informações da Rede</span>
-		<button  title="Downad"  class="gBtn" ng-click="info.showInfo()" >i</button></div>
+		<div style="text-align:right; width: 100%" ><span ng-show="info.show"> Network Information</span>
+		<button  title="Network Information"  class="gBtn" ng-click="info.showInfo()" >i</button></div>
 		<div ng-show="info.show">
 			<table class="table">
-				<tr><td>Coef. Aglom. Médio</td><td>{{info.net.coef_aglom_medio}}</td></tr>
-				<tr><td>Comprimento</td><td>{{info.net.comprimento}}</td></tr>
-				<tr><td>Densidade</td><td>{{info.net.densidade}}</td></tr>
-				<tr><td>Diâmetro</td><td>{{info.net.diametro}}</td></tr>
-				<tr><td>Grau Médio</td><td>{{info.net.grau_medio}}</td></tr>
-				<tr><td>Ordem</td><td>{{info.net.ordem}}</td></tr>
-				<tr><td>Straitness Médio</td><td>{{info.net.strt_medio}}</td></tr>
+				<tr><td>Average Clust. Coeff.</td><td>{{info.net.coef_aglom_medio}}</td></tr>
+				<tr><td>Length</td><td>{{info.net.comprimento}}</td></tr>
+				<tr><td>Density</td><td>{{info.net.densidade}}</td></tr>
+				<tr><td>Diameter</td><td>{{info.net.diametro}}</td></tr>
+				<tr><td>Average Degree</td><td>{{info.net.grau_medio}}</td></tr>
+				<tr><td>Order</td><td>{{info.net.ordem}}</td></tr>
+				<tr><td>Average Straitness</td><td>{{info.net.strt_medio}}</td></tr>
 			</table>
 		</div>
 	</div>
 
 	<div class="g4g-filter">
-			<div style="text-align:right; width: 100%" ><span ng-show="filter.show"> Filtrar</span>
-			<button  title="Filtrar"  class="gBtn"  ng-click="filter.showFilter()" >F</button></div>
+			<div style="text-align:right; width: 100%" ><span ng-show="filter.show"> Filter</span>
+			<button  title="Filter"  class="gBtn"  ng-click="filter.showFilter()" >F</button></div>
 			
 			
 			<div ng-show="filter.show">
@@ -43,15 +43,15 @@
 				</tr>
 			</table>
 			<center>
-			<button class="btn" ng-click="filter.filtrar()">Aplicar Filtro</button>
-			<button class="btn" ng-click="filter.original()">Remover Filtro</button>
+			<button class="btn" ng-click="filter.filtrar()">Apply Filter</button>
+			<button class="btn" ng-click="filter.original()">Remove Filter</button>
 			</center>
 		</div>
 	</div>
 
 	<div class="g4g-grafo">
-		<div style="text-align:right; width: 100%" ><span ng-show="grafo.show"> Grafo</span>
-			<button title="Grafo" class="gBtn" ng-click="grafo.showOptions()" >G</button>
+		<div style="text-align:right; width: 100%" ><span ng-show="grafo.show"> Graph</span>
+			<button title="Graph" class="gBtn" ng-click="grafo.showOptions()" >G</button>
 		</div>
 		
 		

@@ -4,8 +4,8 @@ app.factory('DataFactory',function(){
 	var g4gData = ['grau','grau_in','grau_out','betweeness','closeness','coef_aglom',
 		'mencamed','straight','vulnerab'
 	];
-	var g4gLabels = ['Grau','Grau In','Grau Out','Betweeness','Closeness','Coef. Aglom.',
-		'Min. Cam. Méd.','Straitness','Vulnerab.'
+	var g4gLabels = ['Degree','Degree In','Degree Out','Betweeness','Closeness','Clust. Coeff.',
+		'Shortest Path','Straitness','Vulnerab.'
 	];
 	var g4gSiglas = ['G','GI','GO','B','C','CA','MC','ST','VU'];
 	
@@ -77,6 +77,13 @@ app.factory('DataFactory',function(){
 		
 		getAll: function() {
 			return g4gAll; 
+		},
+		getLabel:function(field) {
+			for (var i=0;i<g4gData.length;i++) {
+				if (g4gData[i] == field)
+					return g4gLabels[i];
+			}
+			return field;
 		}
 	};
 });
@@ -108,7 +115,8 @@ app.controller('TabelaController', function($scope, $http,$routeParams, DataFact
 			var field = fTemp[0].slice(9,-5);
 			$scope.results.push({
 				"field":field,
-				"data":r.data
+				"data":r.data,
+				"label":DataFactory.getLabel(field)
 			});
 		}, function erroCallBack(r) {
 			//console.log('erro',r);	
@@ -118,7 +126,10 @@ app.controller('TabelaController', function($scope, $http,$routeParams, DataFact
 	$scope.showTabela = function(b) {
 		$scope.labels = [];
 		for (var key in b.data[0]) {
-			$scope.labels.push(key);
+			$scope.labels.push({
+				key:key,
+				label:DataFactory.getLabel(key)
+			});
 		}
 		$scope.values = b.data;
 	};
@@ -382,14 +393,13 @@ app.controller('MapController', function($scope, $http, $routeParams,$location, 
 		
 		if (feature) {
 			var txt = 
-				'Coef. Aglom: '+feature.get('coef_aglom')+'<br>'+
-				'Grau: '+feature.get('grau')+'<br>'+
-				'Betweeness: '+feature.get('betweeness')+'<br>'+
-				'Menor Cam. Médio: '+feature.get('mencamed')+'<br>'+
-				'Closeness: '+feature.get('closeness')+'<br>'+
-				'Straight: '+feature.get('straight')+'<br>'+
-				'Vulnerab.: '+feature.get('vulnerab')+'<br>'+
-				'Strahler:'+feature.get('strahler')+'<br>';
+				DataFactory.getLabel('coef_aglom')+': '+feature.get('coef_aglom')+'<br>'+
+				DataFactory.getLabel('grau')+'Grau: '+feature.get('grau')+'<br>'+
+				DataFactory.getLabel('betweeness')+': '+feature.get('betweeness')+'<br>'+
+				DataFactory.getLabel('mencamed')+': '+feature.get('mencamed')+'<br>'+
+				DataFactory.getLabel('closeness')+': '+feature.get('closeness')+'<br>'+
+				DataFactory.getLabel('straight')+': '+feature.get('straight')+'<br>'+
+				DataFactory.getLabel('vulnerab')+': '+feature.get('vulnerab')+'<br>';
 
 			for (var i=0;i<$scope.moreFields.length;i++) {
 				txt += $scope.moreFields[i]+': '+feature.get($scope.moreFields[i])+'<br>';
@@ -399,7 +409,7 @@ app.controller('MapController', function($scope, $http, $routeParams,$location, 
 			var coordinate = evt.coordinate;
 			var hdms = ol.coordinate.toStringHDMS(ol.proj.transform(coordinate, 'EPSG:3857', 'EPSG:4326'));
 	
-			content.innerHTML = '<p>Propriedades:</p><code>' +txt+ '</code>';
+			content.innerHTML = 'Properties:<code><br>' +txt+ '</code>';
 			overlay.setPosition(coordinate);
 		}
 	}); 
