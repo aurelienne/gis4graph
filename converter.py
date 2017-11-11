@@ -41,6 +41,7 @@ class Database:
         self.netwk_table = 'g4g_network_' + self.pid
         self.nodes_table = 'g4g_nodes_' + self.pid
         self.conex_table = 'g4g_relations_' + self.pid
+        self.ways_table = 'ways_' + self.pid
         self.cols = None
 
         if file_in != '':
@@ -74,7 +75,7 @@ class Database:
             os.system('psql -h '+hostDB+' -p '+portDB+' -U '+userDB+' -w -c "create database '+nameDB+'"')
             conn = psycopg2.connect("host="+hostDB+" port="+portDB+" dbname="+nameDB+" user="+userDB+" password="+passDB)
             cur = conn.cursor()
-            cur.execute('create extension postgis')
+            cur.execute('create extension postgis; create extension pgrouting;')
             conn.commit()
             cur.close()
             conn.close()
@@ -109,6 +110,7 @@ class Database:
         cur.execute('drop table if exists ' + self.nodes_table)
         self.conn.commit()
 
+        cur.execute("select pgr_createTopology('"+self.ways_table+"', 0.0001, 'the_geom', 'gid', 'source', 'target')")
         cur.execute('create table '+self.nodes_table+' (gid bigserial, osm_id bigint, name text, ' +
                     'geom geometry(Multilinestring,4326), ' +
                     'CONSTRAINT '+self.nodes_table+'_pkey PRIMARY KEY (gid))')
@@ -187,6 +189,42 @@ class Database:
         cur.close()
         conn.close()
         return dists
+
+    def get_min_route_path(self, i, j):
+        conn = self.create_connection()
+        cur = conn.cursor()
+        cur.execute("select min(agg_cost) "+
+                    "from pgr_dijkstra( "+
+                    "'SELECT gid as id, source, target, length_m as cost "+
+                    "FROM "+self.ways_table+"', "+
+                    #Array of vertices inside source street
+                    "ARRAY(select distinct id from "+
+                    "(select source as id "+
+                    "from "+self.nodes_table+" n, "+self.ways_table+" w "+
+                    "where n.osm_id = w.osm_id "+
+                    "and n.gid = %s "+
+                    "UNION "+
+                    "select target as id "+
+                    "from "+self.nodes_table+" n, "+self.ways_table+" w "+
+                    "where n.osm_id = w.osm_id "+
+                    "and n.gid = %s) as sel), "+
+                    # Array of vertices inside source street
+                    "ARRAY(select distinct id from "+
+                    "(select source as id "+
+                    "from "+self.nodes_table+" n, "+self.ways_table+" w "+
+                    "where n.osm_id = w.osm_id "+
+                    "and n.gid = %s "+
+                    "UNION "+
+                    "select target as id "+
+                    "from "+self.nodes_table+" n, "+self.ways_table+" w "+
+                    "where n.osm_id = w.osm_id "+
+                    "and n.gid = %s) as sel), "+
+                    " true) "+
+                    "where edge = -1", (i,i,j,j))
+        path_len_mt = cur.fetchone()[0]
+        cur.close()
+        conn.close()
+        return path_len_mt
 
     def create_netwk_table(self):
         cur = self.conn.cursor()
@@ -539,11 +577,16 @@ class Grafo:
         mencam = self.mencamList[i]
         nvert = 0
         sumV = 0
-        euclDists = db.get_distance(i + 1, range(1, self.ordem+1))
+        euclDists = db.get_distance(i+1, range(1, self.ordem+1))
         for j in range(self.ordem):
-            if mencam[j] != 0 and mencam[j] != float('Inf'):
+            min_route = db.get_min_route_path(i + 1, j + 1)
+            if j != i and min_route != None:
                 euclDist = euclDists[j]
-                sumV += (euclDist / mencam[j])
+                min_route_km = float(min_route)/1000.
+                ratio = (euclDist / min_route_km)
+                if ratio > 1:
+                    ratio = 1
+                sumV += ratio
                 nvert += 1
         if nvert != 0:
             strt = sumV / float(nvert)
