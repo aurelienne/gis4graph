@@ -27,6 +27,9 @@ This project is licensed under the terms of the GNU GPL v3.0
 Aurelienne Jorge (aurelienne@gmail.com) 
 Marcio Rossato (marcioarp@gmail.com)
 
+# Online version
+Available at: http://gis4graph.info or http://gis4graph.com
+
 # References
 Santos, L. B. L.; Jorge, A. A. S.; Rossato, M.; Santos, J. D.; Candido, O. A.; Seron, W.;
 Santana, C. N. (2017): (geo)graphs - Complex Networks as a shapefile of nodes and
