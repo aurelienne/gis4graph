@@ -4,7 +4,7 @@
 	{{msg}}	
 </div>
 
-<button  ng-class="show=='shp' ? 'btn btn-danger' : 'btn'" ng-click="setShow('shp')">Shape File</button>
+<button  ng-class="show=='shp' ? 'btn btn-danger' : 'btn'" ng-click="setShow('shp')">Shapefile</button>
 <button  ng-class="show=='osm' ? 'btn btn-danger' : 'btn'" ng-click="setShow('osm')">OSM</button>
 <form ng-show="show=='osm'"  enctype="multipart/form-data" action="/uploaderOSM" method="POST">
 	<div class="form-group">
