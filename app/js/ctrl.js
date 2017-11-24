@@ -7,7 +7,8 @@ app.factory('DataFactory',function(){
 	var g4gLabels = ['Degree','Degree In','Degree Out','Betweeness','Closeness','Clust. Coeff.',
 		'Shortest Path','Straightness','Vulnerab.','Strahler'
 	];
-	var g4gSiglas = ['G','GI','GO','B','C','CA','MC','ST','VU','ST'];
+	var g4gSiglas = ['G','GI','GO','B','C','CA',
+		'MC','ST','VU','SH'];
 	
 	var g4gAll = [];
 	for (var i=0;i<g4gData.length;i++) {
