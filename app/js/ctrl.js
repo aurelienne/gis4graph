@@ -2,12 +2,12 @@
 app.factory('DataFactory',function(){
 	var extendedData = [];
 	var g4gData = ['grau','grau_in','grau_out','betweeness','closeness','coef_aglom',
-		'mencamed','straight','vulnerab'
+		'mencamed','straight','vulnerab','strahler'
 	];
 	var g4gLabels = ['Degree','Degree In','Degree Out','Betweeness','Closeness','Clust. Coeff.',
-		'Shortest Path','Straightness','Vulnerab.'
+		'Shortest Path','Straightness','Vulnerab.','Strahler'
 	];
-	var g4gSiglas = ['G','GI','GO','B','C','CA','MC','ST','VU'];
+	var g4gSiglas = ['G','GI','GO','B','C','CA','MC','ST','VU','ST'];
 	
 	var g4gAll = [];
 	for (var i=0;i<g4gData.length;i++) {

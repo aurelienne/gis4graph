@@ -43,6 +43,7 @@ class Database:
         self.conex_table = 'g4g_relations_' + self.pid
         self.ways_table = 'ways_' + self.pid
         self.cols = None
+        self._strahlerenabled = True
 
         if file_in != '':
             self.create_database()
@@ -81,12 +82,12 @@ class Database:
             conn.close()
         self.conn = psycopg2.connect("host="+hostDB+" port="+portDB+" dbname="+nameDB+" user="+userDB+" password="+passDB)
         self.create_netwk_table()
-        self.cria_tabela_conexoes()
+        self.create_conex_table()
 
     def import_shapefile(self):
         os.environ['PGPASSWORD'] = passDB
-        #os.system('shp2pgsql -s '+SRID+' -d -I -W "latin1" '+self.file_in+' public.'+self.nodes_table+' | psql -h '+hostDB+' -p '+portDB+' -d '+nameDB+' -U '+userDB+' -w')
-        os.system('shp2pgsql -s ' + SRID + ' -d -I ' + self.file_in + ' public.' + self.nodes_table + ' | psql -h ' + hostDB + ' -p ' + portDB + ' -d ' + nameDB + ' -U ' + userDB + ' -w')
+        os.system('shp2pgsql -s '+SRID+' -d -I -W "latin1" '+self.file_in+' public.'+self.nodes_table+' | psql -h '+hostDB+' -p '+portDB+' -d '+nameDB+' -U '+userDB+' -w')
+        #os.system('shp2pgsql -s ' + SRID + ' -d -I ' + self.file_in + ' public.' + self.nodes_table + ' | psql -h ' + hostDB + ' -p ' + portDB + ' -d ' + nameDB + ' -U ' + userDB + ' -w')
 
     def alter_nodes_table(self):
         cur = self.conn.cursor()
@@ -99,6 +100,12 @@ class Database:
         cur.execute('alter table ' + self.nodes_table + ' add column closeness numeric(6,4)')
         cur.execute('alter table ' + self.nodes_table + ' add column vulnerab numeric(8,6)')
         cur.execute('alter table ' + self.nodes_table + ' add column straight numeric(8,6)')
+        if self._strahlerenabled == True:
+            cur.execute('alter table ' + self.nodes_table + ' add column flow integer')
+            cur.execute('alter table ' + self.nodes_table + ' add column _strahler integer')
+            cur.execute('create index ix_'+self.nodes_table+'_strahler on '+self.nodes_table+ ' using btree(_strahler)')
+            cur.execute('create index ix_'+self.nodes_table+'_flow on '+self.nodes_table+ ' using btree(flow)')
+
         self.conn.commit()
         cur.close()
 
@@ -244,7 +251,7 @@ class Database:
         self.conn.commit()
         cur.close()
 
-    def cria_tabela_conexoes(self):
+    def create_conex_table(self):
         cur = self.conn.cursor()
         cur.execute('drop table if exists '+self.conex_table)
         self.conn.commit()
@@ -324,7 +331,65 @@ class Database:
         cur = self.conn.cursor()
         cur.execute('update '+self.netwk_table+' set strt_medio = %s', (valor,))
         cur.close()
-        
+
+    def flow_identifier(self, stream_field, mouth):
+        cur = self.conn.cursor()
+        cur2 = self.conn.cursor()
+        cur.execute(
+            'select b.'+stream_field+' from ' + self.nodes_table + ' a, ' + self.nodes_table + ' b where a.'
+            +stream_field+' = %s and st_touches(a.geom, b.geom) and b.'+stream_field+' <> a.'+stream_field+
+            ' and b.flow is null;',
+            (mouth,))
+        for result in cur:
+            cur2.execute('update ' + self.nodes_table + ' set flow = %s where '+stream_field+' = %s;',
+                         (mouth, result[0]))
+            self.conn.commit()
+            self.flow_identifier(stream_field, result[0])
+
+    def strahler(self, stream_field, mouth):
+        cur = self.conn.cursor()
+        cur2 = self.conn.cursor()
+        cur.execute('update '+self.nodes_table+' set flow = 0 where '+stream_field+' = %s', (mouth,))
+        self.conn.commit()
+        # Identify flow
+        self.flow_identifier(stream_field, mouth)
+
+        # Identify sources
+        cur.execute('update '+self.nodes_table+' set _strahler = 1 where _strahler is null and '+stream_field+' in (select h1.'+stream_field+' from '+self.nodes_table+' h1 where h1.flow is not null and h1.cotrecho not in (select h2.flow from '+self.nodes_table+' h2 where h2.flow is not null))')
+
+        # Classification
+        i = 1
+        while True:
+            last = None
+            cur.execute('select count(*) from '+self.nodes_table+' where _strahler is null and (flow is not null or '+
+                        stream_field+' = %s);', (mouth,))
+            count = (cur.fetchone())[0]
+            if count == 0:
+                break
+            cur.execute('select flow, _strahler, count(*) as cont from '+self.nodes_table+' h1 '
+                        'where h1._strahler is not null and h1.flow not in '
+                            '(select h2.flow from '+self.nodes_table+' h2 where h2._strahler is null and h2.flow is not null) '
+                        'and flow not in '
+                            '(select h3.'+stream_field+' from '+self.nodes_table+' h3 where h3._strahler is not null) '
+                        'and flow is not null and flow <> 0 group by 1,2 order by 1 asc, 2 desc;')
+            for reslast in cur:
+                stream = reslast[0]
+                strahler = reslast[1]
+                count = reslast[2]
+                print(stream, strahler, count)
+
+                # print "Cotrecho = "+str(cotrecho)
+                if stream != last:
+                    if count == 1:
+                        cur2.execute('update '+self.nodes_table+' set _strahler = %s where '+stream_field+' = %s;',
+                                     (strahler, stream))
+                    else:
+                        cur2.execute('update '+self.nodes_table+' set _strahler = %s where '+stream_field+' = %s;',
+                                     (strahler + 1, stream))
+                    last = stream
+
+                    self.conn.commit()
+
     def encerra_conexao(self):
         self.conn.close()
 
@@ -632,10 +697,11 @@ class Shp2Graph:
         print("> Menor Caminho Médio calculado - "+str(datetime.datetime.now()))
         self.grf.centralities()
         print("> Closeness e betweeness calculados - "+str(datetime.datetime.now()))
-        self.grf.straightness()
-        print("> Straightness calculado - " + str(datetime.datetime.now()))
+        #self.grf.straightness()
+        #print("> Straightness calculado - " + str(datetime.datetime.now()))
         #self.grf.vulnerabilidade()
         #print("> Vulnerabilidade calculada - " + str(datetime.datetime.now()))
+        db.strahler('cotrecho', 216817)
 
     def compress_files(self, fnameout):
         zipf = zipfile.ZipFile(fnameout+'.zip', 'w', zipfile.ZIP_DEFLATED)
