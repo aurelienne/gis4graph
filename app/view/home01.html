@@ -12,10 +12,25 @@
 		<input class="form-control" id="osm" name="osm" type="file" />
 		<Br>
 	</div>
+	<br>
+	Please, choose the graph metrics to be calculated:
+	<div class="form-group">
+		<input  type="checkbox" value="S" name="G"> Degree<br>
+		<input  type="checkbox" value="S" name="CA"> Clustering Coefficient<br>
+		<input  type="checkbox" value="S" name="MC"> Shortest Path<br>
+		<input  type="checkbox" value="S" name="B"> Betweeness<br>
+		<input  type="checkbox" value="S" name="C"> Closeness<br>
+		<input  type="checkbox" value="S" name="ST" disabled="disabled"> Straightness Centrality<br>
+		<input  type="checkbox" value="S" name="VU" disabled="disabled"> Vulnerability<br>
+		<input type="hidden" value="N" name="SH"> Strahler
+		<input type="hidden" value='0' name="stream_field"> Stream Field 
+		<input type="hidden" value='0' name="basin_mouth"> Basin Mouth<br>
+		
+	</div>
+	<BR>
 	<div class="form-group">
 		<input class="btn btn-success" type="submit" value="OK">
 	</div>
-	
 </form>
 
 <form ng-show="show=='shp'"  enctype="multipart/form-data" action="/uploader" method="POST">
@@ -39,9 +54,23 @@
 		<input class="form-control" id="shx" name="shx" type="file" />
 		<Br>
 	</div>
+	Please, choose the graph metrics to be calculated:
+	<div class="form-group">
+		<input  type="checkbox" value="S" name="G"> Degree<br>
+		<input  type="checkbox" value="S" name="CA"> Clustering Coefficient<br>
+		<input  type="checkbox" value="S" name="MC"> Shortest Path<br>
+		<input  type="checkbox" value="S" name="B"> Betweeness<br>
+		<input  type="checkbox" value="S" name="C"> Closeness<br>
+		<input  type="checkbox" value="S" name="SH"> Strahler 
+			<input type="text" name="stream_field"> Stream Field 
+			<input type="number" name="basin_mouth"> Basin Mouth<br>
+		<input  type="checkbox" value="S" name="ST" disabled="disabled"> Straightness Centrality<br>
+		<input  type="checkbox" value="S" name="VU" disabled="disabled"> Vulnerability<br>
+	</div>
 	<div class="form-group">
 		<input class="btn btn-success" type="submit" value="OK">
 	</div>
+	
 </form>
 
 <hr>

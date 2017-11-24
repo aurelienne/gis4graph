@@ -10,7 +10,53 @@ app = Flask(__name__)
 @app.route('/uploader', methods = ['GET', 'POST'])
 def upload_file():
     dir = 'in/'+str( uuid.uuid4())
+    listOptions = []
     if request.method == 'POST':
+    
+        if 'G' in request.form:
+            listOptions.append('S')
+        else:
+            listOptions.append('N')
+        
+        if 'CA' in request.form:
+            listOptions.append('S')
+        else:
+            listOptions.append('N')
+        
+        if 'MC' in request.form:
+            listOptions.append('S')
+        else:
+            listOptions.append('N')
+        
+        if 'B' in request.form:
+            listOptions.append('S')
+        else:
+            listOptions.append('N')
+        
+        if 'C' in request.form:
+            listOptions.append('S')
+        else:
+            listOptions.append('N')
+        
+        if 'ST' in request.form:
+            listOptions.append('S')
+        else:
+            listOptions.append('N')
+        
+        if 'VU' in request.form:
+            listOptions.append('S')
+        else:
+            listOptions.append('N')
+        
+        if 'SH' in request.form:
+            listOptions.append('S')
+            if 'stream_field' not in request.form or 'basin_mouth' not in request.form:
+                return 'ERROR: Please inform ID field name and Basin Mouth ID!'
+        else:
+            listOptions.append('N')
+              
+        options = ','.join(listOptions)
+    
         os.makedirs(dir)
         f1 = request.files['dbf']
         if secure_filename(f1.filename).split('.')[-1] != 'dbf':
@@ -31,35 +77,80 @@ def upload_file():
         if secure_filename(f4.filename).split('.')[-1] != 'shx':
             return redirect("/app/#/home/" + "Arquivo SHX incorreto. Informar novamente!", code=302)
         f4.save(dir+'/'+secure_filename(f4.filename))
-
-        return redirect("/converter/"+dir+'/'+secure_filename(f3.filename), code=302)
-
+        
+        if 'SH' in request.form:
+            return redirect("/converter/"+options+'/'+dir+'/'+secure_filename(f3.filename)+'/'+
+                request.form['stream_field']+'/'+
+                request.form['basin_mouth']
+                , code=302)
+        else:
+            return redirect("/converter/"+options+'/'+dir+'/'+secure_filename(f3.filename), code=302)
+            
     if request.method == 'GET':
         return 'GET'
 
 
 @app.route('/uploaderOSM', methods = ['GET', 'POST'])
 def upload_file_osm():
+    listOptions = []
     dir = 'in/'+str( uuid.uuid4())
     if request.method == 'POST':
+        
+        if 'G' in request.form:
+            listOptions.append('S')
+        else:
+            listOptions.append('N')
+        
+        if 'CA' in request.form:
+            listOptions.append('S')
+        else:
+            listOptions.append('N')
+        
+        if 'MC' in request.form:
+            listOptions.append('S')
+        else:
+            listOptions.append('N')
+        
+        if 'B' in request.form:
+            listOptions.append('S')
+        else:
+            listOptions.append('N')
+        
+        if 'C' in request.form:
+            listOptions.append('S')
+        else:
+            listOptions.append('N')
+        
+        if 'ST' in request.form:
+            listOptions.append('S')
+        else:
+            listOptions.append('N')
+        
+        if 'VU' in request.form:
+            listOptions.append('S')
+        else:
+            listOptions.append('N')
+              
+        options = ','.join(listOptions)
+    
         os.makedirs(dir)
         f1 = request.files['osm']
         if secure_filename(f1.filename).split('.')[-1] != 'osm':
             return redirect("/app/#/home/" + "Arquivo OSM incorreto. Informar novamente!", code=302)
         f1.save(dir+'/'+secure_filename(f1.filename))
-
-        return redirect("/converter/"+dir+'/'+secure_filename(f1.filename), code=302)
+                
+        return redirect("/converter/"+options+'/'+dir+'/'+secure_filename(f3.filename), code=302)    
 
     if request.method == 'GET':
         return 'GET'
 
-@app.route('/converter/<path:path>', methods = ['GET', 'POST'])
-def convert_shp2graph(path):
+@app.route('/converter/<options>/<path:path>', methods = ['GET', 'POST'])
+def convert_shp2graph(options, path):
     pid = str(uuid.uuid4()).replace('-', '')
     if request.method == 'GET':
         os.makedirs('out/'+pid)
         import converter as c
-        c.Shp2Graph(path, 'out/'+pid+'/out', pid)
+        c.Shp2Graph(path, 'out/'+pid+'/out', pid, options)
         return redirect("/app/#/map/"+pid, code=302)
 
 
