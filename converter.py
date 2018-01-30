@@ -32,7 +32,7 @@ SRID = config.get('FILE','srid')
 
 class Database:
 
-    def __init__(self, file_in='', file_out='', pid='', data_type=''):
+    def __init__(self, file_in='', file_out='', pid='', data_type='', options=''):
         self.conn = None
         self.file_in = file_in
         self.file_out = file_out
@@ -43,7 +43,31 @@ class Database:
         self.conex_table = 'g4g_relations_' + self.pid
         self.ways_table = 'ways_' + self.pid
         self.cols = None
-        self._strahlerenabled = True
+        self.degree_enabled = False
+        self.clustcoeff_enabled = False
+        self.shortpath_enabled = False
+        self.betweeness_enabled = False
+        self.closeness_enabled = False
+        self.straight_enabled = False
+        self.vulnerab_enabled = False
+        self.strahler_enabled = False
+
+        if options[0] == 'S':
+            self.degree_enabled = True
+        if options[1] == 'S':
+            self.clustcoeff_enabled = True
+        if options[2] == 'S':
+            self.shortpath_enabled = True
+        if options[3] == 'S':
+            self.betweeness_enabled = True
+        if options[4] == 'S':
+            self.closeness_enabled= True
+        if options[5] == 'S':
+            self.straight_enabled = True
+        if options[6] == 'S':
+            self.vulnerab_enabled = True
+        if options[7] == 'S':
+            self.strahler_enabled = True
 
         if file_in != '':
             self.create_database()
@@ -91,16 +115,23 @@ class Database:
 
     def alter_nodes_table(self):
         cur = self.conn.cursor()
-        cur.execute('alter table ' + self.nodes_table + ' add column grau integer')
-        cur.execute('alter table ' + self.nodes_table + ' add column grau_in integer')
-        cur.execute('alter table ' + self.nodes_table + ' add column grau_out integer')
-        cur.execute('alter table ' + self.nodes_table + ' add column coef_aglom numeric(6,2)')
-        cur.execute('alter table ' + self.nodes_table + ' add column mencamed numeric(14,4)')
-        cur.execute('alter table ' + self.nodes_table + ' add column betweeness numeric(14,6)')
-        cur.execute('alter table ' + self.nodes_table + ' add column closeness numeric(6,4)')
-        cur.execute('alter table ' + self.nodes_table + ' add column vulnerab numeric(8,6)')
-        cur.execute('alter table ' + self.nodes_table + ' add column straight numeric(8,6)')
-        if self._strahlerenabled == True:
+        if self.degree_enabled == True:
+            cur.execute('alter table ' + self.nodes_table + ' add column grau integer')
+            cur.execute('alter table ' + self.nodes_table + ' add column grau_in integer')
+            cur.execute('alter table ' + self.nodes_table + ' add column grau_out integer')
+        if self.clustcoeff_enabled == True:
+            cur.execute('alter table ' + self.nodes_table + ' add column coef_aglom numeric(6,2)')
+        if self.shortpath_enabled == True:
+            cur.execute('alter table ' + self.nodes_table + ' add column mencamed numeric(14,4)')
+        if self.betweeness_enabled == True:
+            cur.execute('alter table ' + self.nodes_table + ' add column betweeness numeric(14,6)')
+        if self.closeness_enabled == True:
+            cur.execute('alter table ' + self.nodes_table + ' add column closeness numeric(6,4)')
+        if self.vulnerab_enabled == True:
+            cur.execute('alter table ' + self.nodes_table + ' add column vulnerab numeric(8,6)')
+        if self.straight_enabled == True:
+            cur.execute('alter table ' + self.nodes_table + ' add column straight numeric(8,6)')
+        if self.strahler_enabled == True:
             cur.execute('alter table ' + self.nodes_table + ' add column flow integer')
             cur.execute('alter table ' + self.nodes_table + ' add column _strahler integer')
             cur.execute('create index ix_'+self.nodes_table+'_strahler on '+self.nodes_table+ ' using btree(_strahler)')
@@ -582,12 +613,14 @@ class Grafo:
         fig.set_size_inches(2.6, 2.2)
         fig.savefig(os.path.join(fnameout+'_hist.png'))
 
-    def centralities(self):
+    def betweeness(self):
         global db
         lista_bet = self.grafo.betweenness()
         for i in range(0, len(lista_bet)):
             db.update_betweeness(i+1, lista_bet[i])
         db.conn.commit()
+
+    def closeness(self):
         lista_cls = self.grafo.closeness()
         for i in range(0, len(lista_cls)):
             db.update_closeness(i+1, lista_cls[i])
@@ -661,11 +694,30 @@ class Grafo:
 
 class Shp2Graph:
 
-    def __init__(self, fnamein, fnameout, pid):
+    def __init__(self, fnamein, fnameout, pid, options, stream_field, basin_mouth):
         global db
+        self.options = options.split(',')
+        self.stream_field = stream_field
+        self.basin_mouth = basin_mouth
+        order_cols = []
+        if self.options[0] == 'S':
+            order_cols.append('grau')
+        if self.options[1] == 'S':
+            order_cols.append('coef_aglom')
+        if self.options[2] == 'S':
+            order_cols.append('mencamed')
+        if self.options[3] == 'S':
+            order_cols.append('betweeness')
+        if self.options[4] == 'S':
+            order_cols.append('closeness')
+        if self.options[5] == 'S':
+            order_cols.append('straight')
+
         print(datetime.datetime.now())
         file_type = os.path.splitext(fnamein)[-1]
-        db = Database(fnamein, fnameout, pid, file_type)
+        print(fnamein)
+        print(file_type)
+        db = Database(fnamein, fnameout, pid, file_type, options=self.options)
         print("Import realizado - "+str(datetime.datetime.now()))
         qv = db.get_qtd_registros()
         lc = db.get_conex()
@@ -683,25 +735,37 @@ class Shp2Graph:
         db.export_network_json()
         db.export_geojson()
         db.export_grafojson()
-        db.export_ordered_json(order_cols=['grau','closeness','coef_aglom','mencamed','betweeness','straight'])
+        db.export_ordered_json(order_cols=order_cols)
         self.compress_files(fnameout)
         #db.drop_tables()
         db.encerra_conexao()
 
     def realiza_calculos(self):
-        self.grf.calculate_degree()
-        print("> Grau calculado - "+str(datetime.datetime.now()))
-        self.grf.clustering_coeff()
-        print("> Coef. Aglom. calculado - "+str(datetime.datetime.now()))
-        self.grf.avg_shortest_path()
-        print("> Menor Caminho Médio calculado - "+str(datetime.datetime.now()))
-        self.grf.centralities()
-        print("> Closeness e betweeness calculados - "+str(datetime.datetime.now()))
-        #self.grf.straightness()
-        #print("> Straightness calculado - " + str(datetime.datetime.now()))
-        #self.grf.vulnerabilidade()
-        #print("> Vulnerabilidade calculada - " + str(datetime.datetime.now()))
-        db.strahler('cotrecho', 216817)
+        global db
+        if self.options[0] == 'S':
+            self.grf.calculate_degree()
+            print("> Grau calculado - "+str(datetime.datetime.now()))
+        if self.options[1] == 'S':
+            self.grf.clustering_coeff()
+            print("> Coef. Aglom. calculado - "+str(datetime.datetime.now()))
+        if self.options[2] == 'S':
+            self.grf.avg_shortest_path()
+            print("> Menor Caminho Médio calculado - "+str(datetime.datetime.now()))
+        if self.options[3] == 'S':
+            self.grf.betweeness()
+            print("> Betweeness calculado - "+str(datetime.datetime.now()))
+        if self.options[4] == 'S':
+            self.grf.closeness()
+            print("> Closeness calculado - " + str(datetime.datetime.now()))
+        if self.options[5] == 'S':
+            self.grf.straightness()
+            print("> Straightness calculado - " + str(datetime.datetime.now()))
+        if self.options[6] == 'S':
+            self.grf.vulnerabilidade()
+            print("> Vulnerabilidade calculada - " + str(datetime.datetime.now()))
+        if self.options[7] == 'S':
+            db.strahler(self.stream_field, self.basin_mouth)
+            print("> Strahler calculado - " + str(datetime.datetime.now()))
 
     def compress_files(self, fnameout):
         zipf = zipfile.ZipFile(fnameout+'.zip', 'w', zipfile.ZIP_DEFLATED)

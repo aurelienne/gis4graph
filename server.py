@@ -79,12 +79,10 @@ def upload_file():
         f4.save(dir+'/'+secure_filename(f4.filename))
         
         if 'SH' in request.form:
-            return redirect("/converter/"+options+'/'+dir+'/'+secure_filename(f3.filename)+'/'+
-                request.form['stream_field']+'/'+
-                request.form['basin_mouth']
-                , code=302)
+            return redirect("/converter/"+options+'/'+request.form['stream_field']+'/'+
+                request.form['basin_mouth']+'/'+dir+'/'+secure_filename(f3.filename), code=302)
         else:
-            return redirect("/converter/"+options+'/'+dir+'/'+secure_filename(f3.filename), code=302)
+            return redirect("/converter/"+options+'/null/null/'+dir+'/'+secure_filename(f3.filename), code=302)
             
     if request.method == 'GET':
         return 'GET'
@@ -139,18 +137,18 @@ def upload_file_osm():
             return redirect("/app/#/home/" + "Arquivo OSM incorreto. Informar novamente!", code=302)
         f1.save(dir+'/'+secure_filename(f1.filename))
                 
-        return redirect("/converter/"+options+'/'+dir+'/'+secure_filename(f3.filename), code=302)    
+        return redirect("/converter/"+options+'/null/null/'+dir+'/'+secure_filename(f3.filename), code=302)
 
     if request.method == 'GET':
         return 'GET'
 
-@app.route('/converter/<options>/<path:path>', methods = ['GET', 'POST'])
-def convert_shp2graph(options, path):
+@app.route('/converter/<options>/<field>/<mouth>/<path:path>', methods = ['GET', 'POST'])
+def convert_shp2graph(options, field, mouth, path):
     pid = str(uuid.uuid4()).replace('-', '')
     if request.method == 'GET':
         os.makedirs('out/'+pid)
         import converter as c
-        c.Shp2Graph(path, 'out/'+pid+'/out', pid, options)
+        c.Shp2Graph(path, 'out/'+pid+'/out', pid, options, field, mouth)
         return redirect("/app/#/map/"+pid, code=302)
 
 
