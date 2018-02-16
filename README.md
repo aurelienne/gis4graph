@@ -19,6 +19,7 @@ Python 3.0+ and libs: igraph, simplejson, flask, psycopg2, configparser, multipr
 PostgreSQL 9.1+<br>
 PostGIS <Br>
 PGRouting
+osm2pgrouting
 
 # License
 This project is licensed under the terms of the GNU GPL v3.0
