@@ -128,6 +128,9 @@ def upload_file_osm():
             listOptions.append('S')
         else:
             listOptions.append('N')
+
+        # Strahler option disabled for OSM:
+        listOptions.append('N')
               
         options = ','.join(listOptions)
     
@@ -137,7 +140,7 @@ def upload_file_osm():
             return redirect("/app/#/home/" + "Arquivo OSM incorreto. Informar novamente!", code=302)
         f1.save(dir+'/'+secure_filename(f1.filename))
                 
-        return redirect("/converter/"+options+'/null/null/'+dir+'/'+secure_filename(f3.filename), code=302)
+        return redirect("/converter/"+options+'/null/null/'+dir+'/'+secure_filename(f1.filename), code=302)
 
     if request.method == 'GET':
         return 'GET'
