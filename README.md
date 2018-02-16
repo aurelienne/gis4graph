@@ -18,7 +18,7 @@ The very first step before any calculation is to build a graph based on the anal
 Python 3.0+ and libs: igraph, simplejson, flask, psycopg2, configparser, multiprocess<Br>
 PostgreSQL 9.1+<br>
 PostGIS <Br>
-PGRouting
+PGRouting <br>
 osm2pgrouting
 
 # License
