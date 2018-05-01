@@ -1,5 +1,5 @@
 # GIS4Graph
-<img src="http://marciorossato.com.br/app/images/logo.png" />
+<img src="http://marciorossato.com.br/gis4graph/app/images/logo.png" />
 
 # About
 GIS4Graph is an opensource software which aims to help analyzing geographic networks based on (geo)graphs - graphs in which the nodes have a known geographical location and the edges have spatial dependence (Santos et al., 2017). It has been developed to be used as a Web tool and it is composed of 3 modules:

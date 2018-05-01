@@ -6,3 +6,5 @@ out/*
 .project
 
 .pydevproject
+
+nohup.out
