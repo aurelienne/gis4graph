@@ -187,7 +187,6 @@ def send_out(path):
             field_name = fields.get(field)
             where = where+tag+field_name+' between '+str(start)+' and '+str(end)
             tag = ' and '
-        print(where)
 
         import converter as c
         c.Database().export_geojson(where, pid, os.path.join('out', pathjson[0:-5]))

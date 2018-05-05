@@ -19,6 +19,7 @@ import subprocess
 import datetime
 #from concurrent.futures import as_completed, ThreadPoolExecutor, ProcessPoolExecutor
 import multiprocessing as mproc
+import pprint
 
 config = configparser.ConfigParser()
 py_path = os.path.dirname(os.path.abspath(__file__))
@@ -32,7 +33,7 @@ SRID = config.get('FILE','srid')
 
 class Database:
 
-    def __init__(self, file_in='', file_out='', pid='', data_type='', options=''):
+    def __init__(self, file_in='', file_out='', pid='', data_type='', options=[]):
         self.conn = None
         self.file_in = file_in
         self.file_out = file_out
@@ -52,7 +53,9 @@ class Database:
         self.vulnerab_enabled = False
         self.strahler_enabled = False
 
-        if options != '':
+        pprint.pprint(options)
+        print("...")
+        if len(options) > 0:
             if options[0] == 'S':
                 self.degree_enabled = True
             if options[1] == 'S':
@@ -461,7 +464,11 @@ class Database:
         gjson = gjson[0:-1] + ']}'
         if out == '':
             out = self.file_out
-        gj = open(out+'_nodes.json','w')
+        if where != '':
+            gj = open(out+'.json','w')
+        else:
+            gj = open(out+'_nodes.json','w')
+
         gj.write(gjson)
         gj.close()
 

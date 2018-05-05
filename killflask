@@ -1,0 +1,6 @@
+#!/bin/bash
+
+fid=$(ps -aux | grep flask | awk '{print$2}' | head -1)
+
+kill -9 $fid
+
