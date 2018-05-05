@@ -6,3 +6,9 @@ out/*
 .project
 
 .pydevproject
+
+nohup.out
+
+runflask2
+
+__pycache__/*
