@@ -2,13 +2,14 @@
 app.factory('DataFactory',function(){
 	var extendedData = [];
 	var g4gData = ['grau','grau_in','grau_out','betweeness','closeness','coef_aglom',
-		'mencamed','straight','vulnerab','strahler'
+		'mencamed'//,'straight','vulnerab','strahler'
 	];
 	var g4gLabels = ['Degree','Degree In','Degree Out','Betweeness','Closeness','Clust. Coeff.',
-		'Shortest Path','Straightness','Vulnerab.','Strahler'
+		'Shortest Path'//,'Straightness','Vulnerab.','Strahler'
 	];
 	var g4gSiglas = ['G','GI','GO','B','C','CA',
-		'MC','ST','VU','SH'];
+		'MC'//,'ST','VU','SH'
+	];
 	
 	var g4gAll = [];
 	for (var i=0;i<g4gData.length;i++) {
@@ -89,7 +90,7 @@ app.factory('DataFactory',function(){
 	};
 });
 
-app.controller('HomeController', function($scope, $http,$routeParams) {
+app.controller('HomeController', function($scope, $routeParams) {
 	if ($routeParams.id)
 		$scope.msg = $routeParams.msg;
 	else
@@ -587,9 +588,8 @@ app.controller('MapController', function($scope, $http, $routeParams,$location, 
 
 
 	/*
-	 * FILTER
-	 */
-	
+	* FILTER
+	*/
 	$scope.filter = {
 		show: false,
 		showFilter: function() {
