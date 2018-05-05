@@ -52,22 +52,23 @@ class Database:
         self.vulnerab_enabled = False
         self.strahler_enabled = False
 
-        if options[0] == 'S':
-            self.degree_enabled = True
-        if options[1] == 'S':
-            self.clustcoeff_enabled = True
-        if options[2] == 'S':
-            self.shortpath_enabled = True
-        if options[3] == 'S':
-            self.betweeness_enabled = True
-        if options[4] == 'S':
-            self.closeness_enabled= True
-        if options[5] == 'S':
-            self.straight_enabled = True
-        if options[6] == 'S':
-            self.vulnerab_enabled = True
-        if options[7] == 'S':
-            self.strahler_enabled = True
+        if options != '':
+            if options[0] == 'S':
+                self.degree_enabled = True
+            if options[1] == 'S':
+                self.clustcoeff_enabled = True
+            if options[2] == 'S':
+                self.shortpath_enabled = True
+            if options[3] == 'S':
+                self.betweeness_enabled = True
+            if options[4] == 'S':
+                self.closeness_enabled= True
+            if options[5] == 'S':
+                self.straight_enabled = True
+            if options[6] == 'S':
+                self.vulnerab_enabled = True
+            if options[7] == 'S':
+                self.strahler_enabled = True
 
         if file_in != '':
             self.create_database()
@@ -629,13 +630,15 @@ class Grafo:
     def eficiencia_global(self, g):
         sumMC = 0
         lenMC = 0
-        for i in range(0, g.vcount()-1):
+        n = g.vcount()
+        for i in range(0, n-1):
             mencam = g.shortest_paths_dijkstra(source=i)[0]
             invMencam = [1.0/x for x in mencam if (x!=float('Inf'))and(x!=0)]
             sumMC = sumMC + sum(invMencam)
-            lenMC = lenMC + len(invMencam)
+            #lenMC = lenMC + len(invMencam)
 
-        eg = sumMC/lenMC
+        #eg = sumMC/lenMC
+        eg = sumMC/(n*(n-1))
         return eg
 
     def vulnerabilidade(self):
