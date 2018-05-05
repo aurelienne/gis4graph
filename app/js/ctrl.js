@@ -450,7 +450,7 @@ app.controller('MapController', function($scope, $http, $routeParams,$location, 
 	var url = HOST+'out/'+$routeParams.id+'/';
 	if ($routeParams.filter != undefined) {
 		urlNet = url + 'out_netwrk.json';
-		url += $routeParams.filter+'.json'; 
+		url += $routeParams.filter+'_nodes.json'; 
 	} else {
 		urlNet = url + 'out_netwrk.json';
 		url += 'out_nodes.json'; 
