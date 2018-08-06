@@ -704,7 +704,7 @@ class Grafo:
 
 class Shp2Graph:
 
-    def __init__(self, fnamein, fnameout, pid, options, stream_field, basin_mouth):
+    def __init__(self, fnamein, fnameout, pid, options, stream_field=None, basin_mouth=None):
         global db
         self.options = options.split(',')
         self.stream_field = stream_field
@@ -791,7 +791,20 @@ if __name__ == '__main__':
         fnamein = sys.argv[1]
         fnameout = sys.argv[2]
         pid = sys.argv[3]
-        Shp2Graph(fnamein, fnameout, pid)
+        options = config.get('OPTION', 'degree_enabled') + ','
+        options = options + config.get('OPTION', 'clustcoeff_enabled') + ','
+        options = options + config.get('OPTION', 'shortpath_enabled') + ','
+        options = options + config.get('OPTION', 'betweeness_enabled') + ','
+        options = options + config.get('OPTION', 'closeness_enabled') + ','
+        options = options + config.get('OPTION', 'straight_enabled') + ','
+        options = options + config.get('OPTION', 'vulnerab_enabled') + ','
+        options = options + config.get('OPTION', 'strahler_enabled') + ','
+        stream_field = config.get('STRAHLER', 'stream_field')
+        basin_mouth = config.get('STRAHLER', 'basin_mouth')
+        if stream_field != '' and basin_mouth != '':
+            Shp2Graph(fnamein, fnameout, pid, options)
+        else:
+            Shp2Graph(fnamein, fnameout, pid, options, stream_field, basin_mouth)
     else:
         print('Informar path do arquivo de entrada, path de saida e id do processo!')
         sys.exit()
