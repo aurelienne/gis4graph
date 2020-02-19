@@ -274,11 +274,11 @@ class Database:
         self.conn.commit()
 
         cur.execute('create table '+self.netwk_table+' ( \
-                     ordem smallint, \
-                     comprimento smallint, \
+                     ordem integer, \
+                     comprimento integer, \
                      grau_medio numeric(6,2), \
                      coef_aglom_medio numeric(6,2), \
-                     diametro smallint, \
+                     diametro integer, \
                      densidade numeric(6,4), \
                      strt_medio numeric(6,4))')
         self.conn.commit()
