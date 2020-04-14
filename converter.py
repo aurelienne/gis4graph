@@ -20,6 +20,7 @@ import datetime
 #from concurrent.futures import as_completed, ThreadPoolExecutor, ProcessPoolExecutor
 import multiprocessing as mproc
 import pprint
+import csv
 
 config = configparser.ConfigParser()
 py_path = os.path.dirname(os.path.abspath(__file__))
@@ -100,6 +101,8 @@ class Database:
     def create_database(self):
         os.environ['PGPASSWORD'] = passDB
         cont=subprocess.check_output('psql -lqt -h ' + hostDB + ' -U ' + userDB + ' -w | cut -d \| -f 1 | grep ' + nameDB + ' | wc -l', shell=True).decode('ascii').strip()
+        #os.system('psql -h ' + hostDB + ' -p ' + portDB + ' -U ' + userDB + ' -w -c "drop database ' + nameDB + '"')
+
         if cont == '0':
             os.system('psql -h '+hostDB+' -p '+portDB+' -U '+userDB+' -w -c "create database '+nameDB+'"')
             conn = psycopg2.connect("host="+hostDB+" port="+portDB+" dbname="+nameDB+" user="+userDB+" password="+passDB)
@@ -128,7 +131,7 @@ class Database:
         if self.shortpath_enabled == True:
             cur.execute('alter table ' + self.nodes_table + ' add column mencamed numeric(14,4)')
         if self.betweeness_enabled == True:
-            cur.execute('alter table ' + self.nodes_table + ' add column betweeness numeric(14,6)')
+            cur.execute('alter table ' + self.nodes_table + ' add column betweeness numeric(15,6)')
         if self.closeness_enabled == True:
             cur.execute('alter table ' + self.nodes_table + ' add column closeness numeric(6,4)')
         if self.vulnerab_enabled == True:
@@ -145,6 +148,7 @@ class Database:
         cur.close()
 
     def import_osm(self):
+        print(('osm2pgrouting --clean --file '+self.file_in+' --suffix _'+self.pid+' --dbname '+nameDB+' --username '+userDB))
         os.system('osm2pgrouting --clean --file '+self.file_in+' --suffix _'+self.pid+' --dbname '+nameDB+' --username '+userDB)
 
     def map_nodes_osm(self):
@@ -411,7 +415,6 @@ class Database:
                 stream = reslast[0]
                 strahler = reslast[1]
                 count = reslast[2]
-                print(stream, strahler, count)
 
                 # print "Cotrecho = "+str(cotrecho)
                 if stream != last:
@@ -523,6 +526,25 @@ class Database:
         cur.close()
         cur2.close()
         return jsondata
+
+    def export_grafocsv(self):
+        #CSV of nodes
+        cur2 = self.conn.cursor()
+        cur2.execute("select " + self.cols + " from " + self.nodes_table + " order by gid")
+        results = cur2.fetchall()
+        fp = open(self.file_out + '_nodes.csv', 'w')
+        fp.write(self.cols+"\n")
+        myFile = csv.writer(fp)
+        myFile.writerows(results)
+        fp.close()
+
+        # CSV of edges
+        with open(self.file_out + '_edges.csv', 'w') as fp:
+            fp.write("gid_de, gid_para \n")
+            lista_conex = self.get_conex()
+            for item in lista_conex:
+                fp.write(str(item[0])+","+str(item[1])+"\n")
+
 
     def drop_tables(self):
         cur = self.conn.cursor()
@@ -746,6 +768,7 @@ class Shp2Graph:
         db.export_geojson()
         db.export_grafojson()
         db.export_ordered_json(order_cols=order_cols)
+        db.export_grafocsv()
         self.compress_files(fnameout)
         #db.drop_tables()
         db.encerra_conexao()
