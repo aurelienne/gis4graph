@@ -27,6 +27,7 @@ This project is licensed under the terms of the GNU GPL v3.0
 # Developers 
 Aurelienne Jorge (aurelienne@gmail.com) 
 Marcio Rossato (marcioarp@gmail.com)
+Leonardo B. L. Santos
 
 # References
 Santos, L. B. L.; Jorge, A. A. S.; Rossato, M.; Santos, J. D.; Candido, O. A.; Seron, W.;
